@@ -10,11 +10,11 @@ El proyecto está preparado para ejecutarse tanto en **entornos locales** (H2, D
 
 - **Servidor OAuth2 completo**  
   Implementación de los flujos:
-  - *Password Grant*
-  - *Client Credentials*
+  - **Authorization Code + PKCE** (para aplicaciones web/móviles)
+  - **Client Credentials** (para M2M)
 
 - **JWT firmado**  
-  Tokens firmados con clave configurable (HMAC), listos para validación en microservicios.
+  Tokens firmados con clave RSA, listos para validación en microservicios.
 
 - **Gestión de usuarios**  
   - Entidad `UserEntity`  
@@ -23,8 +23,8 @@ El proyecto está preparado para ejecutarse tanto en **entornos locales** (H2, D
   - Endpoints REST para consulta y creación de usuarios
 
 - **Migraciones Flyway**  
-  - `V1__init_schema_and_admin.sql`  
-  - `V2__update_passwords_bcrypt.sql`  
+  - `V4__add_field_aplicacion.sql`  
+  - `V5__add_user_field_app.sql`  
   Garantizan un esquema consistente en todos los entornos.
 
 - **Base de datos flexible**  
@@ -74,12 +74,19 @@ OAuth2Server/
 │   ├── model/
 │   ├── repository/
 │   ├── security/
+│   │   ├── RequestCacheConfig.java    # Configuración de RequestCache
+│   │   ├── SecurityConfig.java        # Configuración de seguridad
+│   │   ├── AppAwareAuthenticationProvider.java
+│   │   ├── PasswordEncoderConfig.java
+│   │   └── oauth2/
+│   │       ├── OAuth2AuthorizationServer.java
+│   │       ├── OAuth2SavedRequestAwareAuthSuccessHandler.java
+│   │       └── ...
 │   └── service/
 └── src/main/resources/
     ├── application.properties
     ├── application-dev.properties
     ├── application-prod.properties
-    ├── data.sql
     └── db/migration/
 ```
 
@@ -118,26 +125,75 @@ docker run -p 8080:8080 oauth2server
 
 ---
 
-## 🔐 Obtener un token OAuth2
+## 🔐 Flujos OAuth2 soportados
 
-### Password Grant
+### 1. Authorization Code + PKCE (Recomendado para usuarios)
 
-```bash
-curl -X POST \
-  -u "client_id:client_secret" \
-  -d "grant_type=password" \
-  -d "username=admin" \
-  -d "password=PASSWORD" \
-  http://localhost:8080/oauth/token
+Este es el flujo estándar para aplicaciones web y móviles. Requiere:
+
+1. **Redireccionar al usuario al endpoint de autorización:**
+```
+http://localhost:8080/oauth2/authorize?
+  response_type=code&
+  client_id=proveedor-oauth&
+  redirect_uri=http://localhost:3000/callback&
+  scope=openid%20profile%20read%20write&
+  code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&
+  code_challenge_method=S256
 ```
 
-### Client Credentials
+2. **El usuario se autentica en la página de login** (`/login`)
+
+3. **Después del login, el servidor redirige al callback con el código:**
+```
+http://localhost:3000/callback?code=xxx
+```
+
+4. **Canjea el código por tokens:**
+```bash
+curl -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "proveedor-oauth:123456" \
+  -d "grant_type=authorization_code" \
+  -d "code=CODIGO_RECIBIDO" \
+  -d "redirect_uri=http://localhost:3000/callback" \
+  -d "code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" \
+  http://localhost:8080/oauth2/token
+```
+
+**Respuesta:**
+```json
+{
+  "access_token": "eyJraWQiOi...",
+  "id_token": "eyJraWQiOi...",
+  "token_type": "Bearer",
+  "expires_in": 86400,
+  "refresh_token": "xxx",
+  "scope": "openid profile read write"
+}
+```
+
+### 2. Client Credentials (M2M)
 
 ```bash
 curl -X POST \
-  -u "client_id:client_secret" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "proveedor-oauth:123456" \
   -d "grant_type=client_credentials" \
-  http://localhost:8080/oauth/token
+  -d "scope=read write" \
+  http://localhost:8080/oauth2/token
+```
+
+---
+
+## 📝 Credenciales por defecto
+
+Las credenciales del cliente OAuth2 y usuario se configuran en el archivo `.env`:
+
+```properties
+# Cliente OAuth2
+OAUTH_CLIENT_ID=proveedor-oauth
+OAUTH_CLIENT_SECRET=123456
 ```
 
 ---
@@ -179,19 +235,19 @@ kubectl port-forward -n auth svc/oauth2-server 8080:8080
 El archivo de base de datos se guarda en:
 
 ```
-/data/oauth2db.mv.db
+/app/data/oauth2db.mv.db
 ```
 
 ### Copiar la BD desde el pod al host
 
 ```bash
-kubectl cp auth/<POD>:/data/oauth2db.mv.db ./oauth2db.mv.db
+kubectl cp auth/<POD>:/app/data/oauth2db.mv.db ./oauth2db.mv.db
 ```
 
 ### Copiar la BD desde el host al pod
 
 ```bash
-kubectl cp ./oauth2db.mv.db auth/<POD>:/data/oauth2db.mv.db
+kubectl cp ./oauth2db.mv.db auth/<POD>:/app/data/oauth2db.mv.db
 ```
 
 ---
@@ -219,12 +275,11 @@ PY
 
 Se definen en `k8s/secrets.yaml` (codificadas en base64):
 
-- `JWT_SIGNING_KEY`
-- `DB_URL`
-- `DB_USER`
-- `DB_PASS`
-- `OAUTH_CLIENT_ID`
-- `OAUTH_CLIENT_SECRET`
+- `jwt-signing-key` - Clave secreta para firmar tokens JWT
+- `oauth-client-id` - ID del cliente OAuth2
+- `oauth-client-secret` - Secreto del cliente OAuth2
+- `oauth-redirect-uri` - URI de redirección OAuth2
+- `oauth-audience` - Audience para JWT
 
 Ejemplo:
 
@@ -236,10 +291,11 @@ metadata:
   namespace: auth
 type: Opaque
 data:
-  jwt-key: <base64>
-  db-url: <base64>
-  db-user: <base64>
-  db-pass: <base64>
+  jwt-signing-key: <base64>
+  oauth-client-id: <base64>
+  oauth-client-secret: <base64>
+  oauth-redirect-uri: <base64>
+  oauth-audience: <base64>
 ```
 
 ---
@@ -249,5 +305,3 @@ data:
 MIT
 
 ---
-
-

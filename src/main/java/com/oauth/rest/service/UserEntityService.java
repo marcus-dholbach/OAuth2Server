@@ -21,13 +21,17 @@ public class UserEntityService extends BaseService<UserEntity, Long, UserEntityR
     private final PasswordEncoder passwordEncoder;
 
     public UserEntityService(UserEntityRepository repository,
-                             PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder) {
         super(repository);
         this.passwordEncoder = passwordEncoder;
     }
 
     public Optional<UserEntity> findUserByUsername(String username) {
         return this.repository.findByUsername(username);
+    }
+
+    public Optional<UserEntity> findUserByUsernameAndApplication(String username, String application) {
+        return this.repository.findByUsernameAndApplication(username, application);
     }
 
     public UserEntity nuevoUsuario(CreateUserDto newUser) {
@@ -47,9 +51,8 @@ public class UserEntityService extends BaseService<UserEntity, Long, UserEntityR
             return save(user);
         } catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "El nombre de usuario ya existe"
-            );
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre de usuario ya existe");
         }
     }
 }

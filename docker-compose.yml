@@ -4,9 +4,47 @@ services:
     image: felixmurcia/oauth2server:dev
     container_name: oauth2server-dev
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:${PORT:-8080}"
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      
+      # H2 Database
+      H2_USERNAME: ${H2_USERNAME:-sa}
+      H2_PASSWORD: ${H2_PASSWORD:-}
+      
+      # Puerto
+      PORT: ${PORT:-8080}
+      
+      # Usuarios iniciales
+      DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME:-admin}
+      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-Admin1}
+      
+      # OAuth2 Client
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-proveedor-oauth}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-123456}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8080/login.html}
+      
+      # Token validity
+      ACCESS_TOKEN_VALIDITY: ${ACCESS_TOKEN_VALIDITY:-86400}
+      REFRESH_TOKEN_VALIDITY: ${REFRESH_TOKEN_VALIDITY:-1296000}
+      
+      # JWT
+      ISSUER_URL: ${ISSUER_URL:-http://localhost:8080}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-oauth2-client}
+      
+      # Clave JWT (importante para producción)
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-clave-secreta-jwt-para-desarrollo-cambiar-en-produccion}
+      
     volumes:
       - /home/jetson/oauth2db:/app/data
+      - ./logs:/app/logs
+    env_file:
+      - .env
     command: ["/app/run-dev.sh"]
+    restart: unless-stopped
+    networks:
+      - oauth-network
+
+networks:
+  oauth-network:
+    driver: bridge

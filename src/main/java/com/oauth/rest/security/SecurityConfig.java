@@ -2,58 +2,85 @@ package com.oauth.rest.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.BeanIds;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
+
+import com.oauth.rest.security.oauth2.OAuth2ParameterSavingFilter;
+import com.oauth.rest.security.oauth2.OAuth2SavedRequestAwareAuthSuccessHandler;
+import com.oauth.rest.service.CustomUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
 
-    private final PasswordEncoder passwordEncoder;
-    private final UserDetailsService userDetailsService;
+        private final PasswordEncoder passwordEncoder;
+        private final CustomUserDetailsService customUserDetailsService;
+        private final AppAwareAuthenticationProvider appAwareAuthenticationProvider;
+        private final OAuth2ParameterSavingFilter oauth2ParameterSavingFilter;
+        private final OAuth2SavedRequestAwareAuthSuccessHandler oauth2AuthSuccessHandler;
 
-    public SecurityConfig(PasswordEncoder passwordEncoder,
-            UserDetailsService userDetailsService) {
-        this.passwordEncoder = passwordEncoder;
-        this.userDetailsService = userDetailsService;
-    }
+        public SecurityConfig(PasswordEncoder passwordEncoder,
+                        CustomUserDetailsService customUserDetailsService,
+                        AppAwareAuthenticationProvider appAwareAuthenticationProvider,
+                        OAuth2ParameterSavingFilter oauth2ParameterSavingFilter,
+                        OAuth2SavedRequestAwareAuthSuccessHandler oauth2AuthSuccessHandler) {
+                this.passwordEncoder = passwordEncoder;
+                this.customUserDetailsService = customUserDetailsService;
+                this.appAwareAuthenticationProvider = appAwareAuthenticationProvider;
+                this.oauth2ParameterSavingFilter = oauth2ParameterSavingFilter;
+                this.oauth2AuthSuccessHandler = oauth2AuthSuccessHandler;
+        }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+        @Bean
+        public StrictHttpFirewall httpFirewall() {
+                StrictHttpFirewall firewall = new StrictHttpFirewall();
+                firewall.setAllowSemicolon(true); // Permitir ; en URLs para OAuth2 con jsessionid
+                firewall.setAllowUrlEncodedPercent(true);
+                return firewall;
+        }
 
-        http
-                .cors()
-                .and()
-                .csrf().disable()
-                .requestMatchers()
-                .antMatchers("/login", "/oauth/authorize", "/oauth/token")
-                .and()
-                .authorizeRequests()
-                .antMatchers(HttpMethod.OPTIONS, "/oauth/**").permitAll()
-                .antMatchers("/oauth/token").permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .formLogin()
-                .permitAll();
-    }
+        @Bean
+        @Order(2)
+        public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                // Filtro para guardar parámetros OAuth2 en sesión ANTES de que Spring Security
+                                // intercepte
+                                .addFilterBefore(oauth2ParameterSavingFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
+                                // ✅ Esta cadena manejará el resto de peticiones
+                                .securityMatcher("/**")
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers("/oauth2/authorize", "/oauth/authorize").permitAll()
+                                                .requestMatchers("/oauth/token", "/oauth2/token", "/login",
+                                                                "/h2-console/**")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .successHandler(oauth2AuthSuccessHandler)
+                                                .permitAll())
+                                .authenticationManager(authenticationManager())
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint(
+                                                                new LoginUrlAuthenticationEntryPoint("/login")))
+                                .csrf(csrf -> csrf
+                                                .ignoringRequestMatchers("/h2-console/**", "/oauth/token",
+                                                                "/oauth2/token"));
+                return http.build();
+        }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder);
-    }
-
-    @Bean(BeanIds.AUTHENTICATION_MANAGER)
-    @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager() {
+                return new ProviderManager(appAwareAuthenticationProvider);
+        }
 }

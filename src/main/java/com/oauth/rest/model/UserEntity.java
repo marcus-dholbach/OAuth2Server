@@ -5,16 +5,18 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -30,7 +32,8 @@ public class UserEntity implements UserDetails {
     private static final long serialVersionUID = 6189678452627071360L;
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "usuarios_seq")
+    @SequenceGenerator(name = "usuarios_seq", sequenceName = "usuarios_seq", allocationSize = 1)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -59,7 +62,7 @@ public class UserEntity implements UserDetails {
     }
 
     public UserEntity(Long id, String username, String password, String fullName, String email,
-                      Set<UserRole> roles, LocalDateTime createdAt, LocalDateTime lastPasswordChangeAt) {
+            Set<UserRole> roles, LocalDateTime createdAt, LocalDateTime lastPasswordChangeAt) {
         this.id = id;
         this.username = username;
         this.password = password;

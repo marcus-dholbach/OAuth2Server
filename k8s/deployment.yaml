@@ -30,6 +30,12 @@ spec:
                   name: oauth2-secrets
                   key: jwt-signing-key
 
+            - name: JWT_AUDIENCE
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: oauth-audience
+
             - name: OAUTH_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -48,6 +54,47 @@ spec:
                   name: oauth2-secrets
                   key: oauth-redirect-uri
 
+            - name: DEFAULT_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: default-admin-username
+
+            - name: DEFAULT_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: default-admin-password
+
+            - name: DEFAULT_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: default-user-username
+
+            - name: DEFAULT_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: default-user-password
+
+            - name: ISSUER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: issuer-url
+
+            - name: H2_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: h2-username
+
+            - name: H2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-secrets
+                  key: h2-password
 
           ports:
             - containerPort: 8080

@@ -7,19 +7,55 @@ Todos los endpoints siguen el estándar OAuth2 y devuelven respuestas en formato
 
 # 🔐 1. Endpoints OAuth2
 
-## 1.1. `/oauth/token` – Obtener token
+## 1.1. `/oauth2/authorize` – Autorización
 
-Endpoint principal para obtener tokens JWT mediante los flujos:
+Endpoint para iniciar el flujo de Authorization Code con PKCE.
 
-- **Password Grant**
-- **Client Credentials**
-
-### 🔸 Método
+### Método
 ```
-POST /oauth/token
+GET /oauth2/authorize
 ```
 
-### 🔸 Headers
+### Parámetros
+- `response_type`: Debe ser `"code"`
+- `client_id`: ID del cliente (ej: `proveedor-oauth`)
+- `redirect_uri`: URI de callback (ej: `http://localhost:3000/callback`)
+- `scope`: scopes separados por espacio (ej: `openid profile read write`)
+- `code_challenge`: Challenge de PKCE
+- `code_challenge_method`: Método de verificación (`S256`)
+
+### Ejemplo
+```
+http://localhost:8080/oauth2/authorize?
+  response_type=code&
+  client_id=proveedor-oauth&
+  redirect_uri=http://localhost:3000/callback&
+  scope=openid%20profile%20read%20write&
+  code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&
+  code_challenge_method=S256
+```
+
+### Respuesta
+- Si el usuario no está autenticado: Redirige a `/login`
+- Si está autenticado: Muestra pantalla de consentimiento
+- Después del consentimiento: Redirige al callback con el código
+
+```
+http://localhost:3000/callback?code=xxx
+```
+
+---
+
+## 1.2. `/oauth2/token` – Obtener token
+
+Endpoint para obtener tokens JWT.
+
+### Método
+```
+POST /oauth2/token
+```
+
+### Headers
 ```
 Authorization: Basic base64(client_id:client_secret)
 Content-Type: application/x-www-form-urlencoded
@@ -27,61 +63,58 @@ Content-Type: application/x-www-form-urlencoded
 
 ---
 
-## 🔹 A) Password Grant
+### 🔹 A) Authorization Code + PKCE
 
-Autentica a un usuario real (username/password).
+Canjea el código de autorización por tokens.
 
 ### Request
 ```bash
 curl -X POST \
-  -u "cine-platform:supersecreto" \
-  -d "grant_type=password" \
-  -d "username=admin" \
-  -d "password=PASSWORD" \
-  http://localhost:8080/oauth/token
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "proveedor-oauth:123456" \
+  -d "grant_type=authorization_code" \
+  -d "code=CODIGO_RECIBIDO" \
+  -d "redirect_uri=http://localhost:3000/callback" \
+  -d "code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" \
+  http://localhost:8080/oauth2/token
 ```
 
 ### Response
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "expires_in": 86399,
-  "scope": "read write"
+  "access_token": "eyJraWQiOi...",
+  "id_token": "eyJraWQiOi...",
+  "token_type": "Bearer",
+  "expires_in": 86400,
+  "refresh_token": "xxx",
+  "scope": "openid profile read write"
 }
 ```
 
 ---
 
-## 🔹 B) Client Credentials
+### 🔹 B) Client Credentials (M2M)
 
-Autenticación entre servicios (sin usuario humano).
+Para aplicaciones Machine-to-Machine.
 
 ### Request
 ```bash
 curl -X POST \
-  -u "client_id:client_secret" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "proveedor-oauth:123456" \
   -d "grant_type=client_credentials" \
-  http://localhost:8080/oauth/token
+  -d "scope=read write" \
+  http://localhost:8080/oauth2/token
 ```
 
 ### Response
-Igual que en password grant, pero sin refresh token.
-
----
-
-## 🔹 C) Refresh Token
-
-Renueva un access token caducado.
-
-### Request
-```bash
-curl -X POST \
-  -u "client_id:client_secret" \
-  -d "grant_type=refresh_token" \
-  -d "refresh_token=<REFRESH_TOKEN>" \
-  http://localhost:8080/oauth/token
+```json
+{
+  "access_token": "eyJraWQiOi...",
+  "token_type": "Bearer",
+  "expires_in": 86400,
+  "scope": "read write"
+}
 ```
 
 ---
@@ -97,38 +130,13 @@ Authorization: Bearer <ACCESS_TOKEN>
 
 ---
 
-## 2.1. `GET /api/users` – Listar usuarios
+## 2.1. `GET /user/me` – Obtener usuario actual
 
 ### Request
 ```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  http://localhost:8080/api/users
-```
-
-### Response
-```json
-[
-  {
-    "id": 1,
-    "username": "admin",
-    "role": "ADMIN"
-  },
-  {
-    "id": 2,
-    "username": "juanaco",
-    "role": "USER"
-  }
-]
-```
-
----
-
-## 2.2. `GET /api/users/{id}` – Obtener usuario por ID
-
-### Request
-```bash
-curl -H "Authorization: Bearer <TOKEN>" \
-  http://localhost:8080/api/users/1
+curl -X GET \
+  -H "Authorization: Bearer <TOKEN>" \
+  http://localhost:8080/user/me
 ```
 
 ### Response
@@ -142,19 +150,18 @@ curl -H "Authorization: Bearer <TOKEN>" \
 
 ---
 
-## 2.3. `POST /api/users` – Crear usuario
+## 2.2. `POST /user` – Crear usuario
 
 ### Request
 ```bash
 curl -X POST \
-  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
         "username": "nuevo",
         "password": "1234",
         "role": "USER"
       }' \
-  http://localhost:8080/api/users
+  http://localhost:8080/user
 ```
 
 ### Response
@@ -168,6 +175,20 @@ curl -X POST \
 
 ---
 
+## 2.3. `GET /login` – Página de login
+
+Página de login para usuarios.
+
+### Request
+```bash
+curl -X GET http://localhost:8080/login
+```
+
+### Response
+Página HTML con formulario de login.
+
+---
+
 # 🔒 3. Seguridad y Roles
 
 El sistema define dos roles:
@@ -178,11 +199,12 @@ El sistema define dos roles:
 ### Permisos por defecto:
 
 | Endpoint | USER | ADMIN |
-|---------|------|--------|
-| `/oauth/token` | ✔️ | ✔️ |
-| `GET /api/users` | ❌ | ✔️ |
-| `POST /api/users` | ❌ | ✔️ |
-| `GET /api/users/{id}` | ✔️ (solo su propio usuario) | ✔️ |
+|----------|------|-------|
+| `/oauth2/authorize` | ✔️ | ✔️ |
+| `/oauth2/token` | ✔️ | ✔️ |
+| `/login` | ✔️ | ✔️ |
+| `GET /user/me` | ✔️ | ✔️ |
+| `POST /user` | ✔️ | ✔️ |
 
 ---
 
@@ -196,18 +218,19 @@ El sistema define dos roles:
 }
 ```
 
+### Código inválido
+```json
+{
+  "error": "invalid_grant",
+  "error_description": "Invalid authorization code"
+}
+```
+
 ### Credenciales incorrectas
 ```json
 {
   "error": "invalid_grant",
   "error_description": "Bad credentials"
-}
-```
-
-### Sin permisos
-```json
-{
-  "error": "access_denied"
 }
 ```
 
@@ -218,7 +241,7 @@ El sistema define dos roles:
 El proyecto incluye documentación interactiva:
 
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ---
@@ -227,8 +250,9 @@ http://localhost:8080/swagger-ui.html
 
 OAuth2Server proporciona:
 
-- Autenticación OAuth2 estándar  
-- Emisión de JWT  
+- **Authorization Code + PKCE** para aplicaciones web/móviles  
+- **Client Credentials** para M2M  
+- Emisión de JWT firmados con RSA  
 - Gestión de usuarios  
 - Seguridad basada en roles  
 - Integración lista para microservicios  

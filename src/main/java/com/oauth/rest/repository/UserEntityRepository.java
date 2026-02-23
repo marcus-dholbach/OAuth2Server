@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.oauth.rest.model.UserEntity;
 
 public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
-	
+
 	Optional<UserEntity> findByUsername(String username);
+
+	Optional<UserEntity> findByUsernameAndApplication(String username, String application);
 
 }

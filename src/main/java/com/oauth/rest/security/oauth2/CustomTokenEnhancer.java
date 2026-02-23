@@ -1,34 +1,18 @@
 package com.oauth.rest.security.oauth2;
 
-import org.springframework.security.oauth2.provider.token.TokenEnhancer;
-import org.springframework.security.oauth2.common.OAuth2AccessToken;
-import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.stereotype.Component;
-import com.oauth.rest.model.UserEntity;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
-
-import java.util.HashMap;
-import java.util.Map;
-
-@Component
-public class CustomTokenEnhancer implements TokenEnhancer {
+@Configuration
+public class CustomTokenEnhancer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
     @Override
-    public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-
-        Object principal = authentication.getPrincipal();
-
-        Map<String, Object> additionalInfo = new HashMap<>();
-
-        if (principal instanceof UserEntity) {
-            UserEntity usuario = (UserEntity) principal;
-            additionalInfo.put("app", usuario.getApplication());
+    public void customize(JwtEncodingContext context) {
+        if (context.getTokenType().getValue().equals("access_token")) {
+            context.getClaims().claims(claims -> {
+                claims.put("application", "OAuth2Server");
+            });
         }
-
-        ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInfo);
-
-        return accessToken;
     }
 }
-

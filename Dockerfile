@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:21-jdk-alpine
 
 # Directorio de trabajo dentro del contenedor
 WORKDIR /app
