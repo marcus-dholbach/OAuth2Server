@@ -151,7 +151,7 @@ public class OAuth2AuthorizationServer {
                                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                                 .clientSettings(ClientSettings.builder()
                                                 .requireAuthorizationConsent(true)
-                                                .requireProofKey(false)
+                                                .requireProofKey(true)
                                                 .build())
                                 .tokenSettings(TokenSettings.builder()
                                                 .accessTokenTimeToLive(
