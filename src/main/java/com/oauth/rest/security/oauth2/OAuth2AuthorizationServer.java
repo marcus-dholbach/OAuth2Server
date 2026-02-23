@@ -80,6 +80,16 @@ public class OAuth2AuthorizationServer {
         public RegisteredClientRepository registeredClientRepository(PasswordEncoder passwordEncoder) {
                 List<RegisteredClient> clients = new ArrayList<>();
 
+                System.out.println("=== DIAGNÓSTICO CLIENT PROPERTIES ===");
+                System.out.println("clientProperties es null? " + (clientProperties == null));
+                if (clientProperties != null) {
+                        System.out.println("clientProperties.getClients() es null? "
+                                        + (clientProperties.getClients() == null));
+                        if (clientProperties.getClients() != null) {
+                                System.out.println("Número de clientes en properties: "
+                                                + clientProperties.getClients().size());
+                        }
+                }
                 // Si hay clientes configurados en properties, usarlos
                 if (clientProperties != null && clientProperties.getClients() != null
                                 && !clientProperties.getClients().isEmpty()) {
@@ -144,7 +154,7 @@ public class OAuth2AuthorizationServer {
 
         private RegisteredClient createDefaultClient(PasswordEncoder passwordEncoder) {
                 return RegisteredClient.withId(UUID.randomUUID().toString())
-                                .clientId("proveedor-oauth")
+                                .clientId("default-client")
                                 .clientSecret(passwordEncoder.encode("123456"))
                                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)

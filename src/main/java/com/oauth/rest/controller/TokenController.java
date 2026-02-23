@@ -38,7 +38,7 @@ public class TokenController {
     @Value("${oauth2.access-token-validity-seconds:3600}")
     private int accessTokenValiditySeconds;
 
-    @Value("${oauth2.client-id}")
+    @Value("${oauth2.client-id:default-client}")
     private String clientId;
 
     public TokenController(AuthenticationManager authenticationManager,

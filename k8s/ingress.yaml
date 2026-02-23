@@ -1,12 +1,14 @@
+# k8s/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: oauth2-server-ingress
+  namespace: auth
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: oauth2.mi-dominio.com
+    - host: auth.midominio.com  # ← URL pública para el login
       http:
         paths:
           - path: /
@@ -15,4 +17,4 @@ spec:
               service:
                 name: oauth2-server
                 port:
-                  number: 80
+                  number: 8080

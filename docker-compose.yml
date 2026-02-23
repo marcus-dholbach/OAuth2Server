@@ -20,7 +20,7 @@ services:
       DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD:-Admin1}
       
       # OAuth2 Client
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-proveedor-oauth}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-default-client}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-123456}
       OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:8080/login.html}
       

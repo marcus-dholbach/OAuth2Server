@@ -7,7 +7,7 @@ import java.util.List;
 
 // Usar @ConfigurationPropertiesScan en Application.java para registrar
 // No usar @Component para evitar conflictos con otros beans
-@ConfigurationProperties(prefix = "oauth2.clients")
+@ConfigurationProperties(prefix = "oauth2")
 public class OAuth2ClientProperties {
 
     private List<ClientConfig> clients = new ArrayList<>();

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: oauth2-server
-          image: felixmurcia/oauth2server:v20260211-2038
+          image: felixmurcia/oauth2server:v20260223-1533
           
           # Ejecuta tu script de producción dentro del contenedor
           command: ["/bin/sh", "-c", "/app/run-prod.sh"]
@@ -35,18 +35,6 @@ spec:
                 secretKeyRef:
                   name: oauth2-secrets
                   key: oauth-audience
-
-            - name: OAUTH_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: oauth-client-id
-
-            - name: OAUTH_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: oauth-client-secret
 
             - name: OAUTH_REDIRECT_URI
               valueFrom:
@@ -96,8 +84,33 @@ spec:
                   name: oauth2-secrets
                   key: h2-password
 
+            - name: CINE_PLATFORM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cine-secret
+                  key: CINE_PLATFORM_SECRET
+
+            - name: CINE_PLATFORM_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: cine-secret
+                  key: CINE_PLATFORM_REDIRECT_URI
+				  
+            - name: TRANSCRIBEAPP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cine-secret
+                  key: TRANSCRIBEAPP_SECRET
+
+            - name: TRANSCRIBEAPP_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: cine-secret
+                  key: TRANSCRIBEAPP_REDIRECT_URI	
+
           ports:
             - containerPort: 8080
+              hostPort: 30444
 
           volumeMounts:
             - name: oauth2-data

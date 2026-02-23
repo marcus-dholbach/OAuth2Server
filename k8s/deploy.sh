@@ -8,6 +8,22 @@ NAMESPACE="auth"
 DEPLOYMENT="oauth2-server"
 CONTAINER_NAME="oauth2-server"
 
+# ===== COMPILACIÓN Y TESTS =====
+echo "======================================"
+echo "  🔨 Compilando aplicación y ejecutando tests"
+echo "======================================"
+
+# Ejecutar mvn clean install (esto compila y ejecuta los tests)
+mvn clean install
+
+# Verificar que la compilación fue exitosa
+if [ $? -ne 0 ]; then
+    echo "❌ Error en la compilación o los tests. Abortando despliegue."
+    exit 1
+fi
+
+echo "✅ Compilación y tests exitosos"
+
 # ===== GENERAR TAG AUTOMÁTICO =====
 TAG=$(date +"v%Y%m%d-%H%M")
 FULL_IMAGE="$IMAGE_NAME:$TAG"
