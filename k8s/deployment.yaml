@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: oauth2-server
-          image: felixmurcia/oauth2server:v20260223-2201
+          image: felixmurcia/oauth2server:v20260224-1540
           
           command: ["java"]
           args: ["-jar", "/app/app.jar", "--spring.profiles.active=prod"]
