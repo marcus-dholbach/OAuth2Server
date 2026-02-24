@@ -48,3 +48,5 @@ src/main/resources/db/migration/*
 src/main/resources/data.sql
 
 server.log
+
+keystore.p12

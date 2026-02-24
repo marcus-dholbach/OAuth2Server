@@ -64,6 +64,11 @@
             <version>${oauth2-authorization-server.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Thymeleaf for templates -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

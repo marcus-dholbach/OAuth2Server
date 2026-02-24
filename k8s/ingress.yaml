@@ -6,9 +6,18 @@ metadata:
   namespace: auth
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ubuntu.tail921051.ts.net
+      secretName: tls-keystore
   rules:
-    - host: auth.midominio.com  # ← URL pública para el login
+    - host: ubuntu.tail921051.ts.net
       http:
         paths:
           - path: /
@@ -17,4 +26,4 @@ spec:
               service:
                 name: oauth2-server
                 port:
-                  number: 8080
+                  number: 443
