@@ -105,10 +105,6 @@ public class DataInitializer {
                 user.setEmail(userEmail);
                 user.setRoles(Set.of(UserRole.USER));
                 userRepository.save(user);
-
-                log.info("Usuarios inicializados correctamente");
-                log.info("   - Admin: {}", adminUsername);
-                log.info("   - User: {}", userUsername);
             } else {
                 log.info("Usuarios ya existentes en la base de datos");
             }

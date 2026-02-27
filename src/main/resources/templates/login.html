@@ -9,15 +9,15 @@
 <body>
     <div class="login-container">
         <h1>🔐 Iniciar Sesión</h1>
-        
+
         <div th:if="${error}" class="error" th:text="${error}">
             Error message
         </div>
-        
+
         <div th:if="${logout}" class="logout" th:text="${logout}">
             Logout message
         </div>
-        
+
         <form th:action="@{/login}" method="post">
             <div class="form-group">
                 <label for="username">Usuario</label>
@@ -28,7 +28,7 @@
                        autofocus
                        th:value="${param.username}">
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Contraseña</label>
                 <input type="password" 
@@ -36,13 +36,13 @@
                        name="password" 
                        required>
             </div>
-            
+
             <button type="submit">Iniciar Sesión</button>
         </form>
-        
+
         <div class="info">
             <span class="brand">Powered by</span>
-            <strong class="name">FelixMarin · OAuth2 Server</strong>
+            <strong class="name"> · OAuth2Server</strong>
         </div>
     </div>
 </body>

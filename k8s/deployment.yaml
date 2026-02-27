@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
       - name: generate-keystore
-        image: felixmurcia/oauth2server:v20260225-1901
+        image: felixmurcia/oauth2server:v20260227-1320
         command:
           - /bin/sh
           - -c
@@ -64,11 +64,14 @@ spec:
 
       containers:
       - name: oauth2-server
-        image: felixmurcia/oauth2server:v20260225-1901
-        command: ["java", "-jar", "/app/app.jar"]
+        image: felixmurcia/oauth2server:v20260227-1320
+        command:
+          - java
+          - -jar
+          - /app/app.jar
         env:
         - name: SPRING_PROFILES_ACTIVE
-          value: dev
+          value: prod
         - name: JWT_SIGNING_KEY
           valueFrom:
             secretKeyRef:

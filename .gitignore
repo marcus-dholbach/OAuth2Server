@@ -50,4 +50,10 @@ src/main/resources/data.sql
 
 server.log
 
-keystore.p12
+*.p12
+*.crt
+*.key
+*.jks
+*.pem
+*.cer
+*.pfx
