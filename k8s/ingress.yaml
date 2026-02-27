@@ -9,15 +9,15 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # ← DÉJALA, no estorba
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - ubuntu.tail921051.ts.net
-      secretName: tls-keystore
+        - pop-os.tail921051.ts.net  # ← SOLO pop-os
+      secretName: tls-keystore-popos  # ← Secreto correcto
   rules:
-    - host: ubuntu.tail921051.ts.net
+    - host: pop-os.tail921051.ts.net  # ← SOLO pop-os
       http:
         paths:
           - path: /

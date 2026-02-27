@@ -5,6 +5,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +29,7 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -48,20 +51,42 @@ public class OAuth2AuthorizationServer {
         private int defaultRefreshTokenValiditySeconds;
 
         private final OAuth2ClientProperties clientProperties;
+        private final OAuth2ParameterSavingFilter oauth2ParameterSavingFilter;
 
-        public OAuth2AuthorizationServer(OAuth2ClientProperties clientProperties) {
+        public OAuth2AuthorizationServer(OAuth2ClientProperties clientProperties,
+                        OAuth2ParameterSavingFilter oauth2ParameterSavingFilter) {
                 this.clientProperties = clientProperties;
+                this.oauth2ParameterSavingFilter = oauth2ParameterSavingFilter;
+                System.out.println("=== OAuth2AuthorizationServer INITIALIZED ===");
+                log.info("=== OAuth2AuthorizationServer INITIALIZED ===");
+        }
+
+        @PostConstruct
+        public void init() {
+                log.info("=== OAuth2AuthorizationServer BEAN CREATED SUCCESSFULLY ===");
+                System.out.println("=== OAuth2AuthorizationServer BEAN CREATED SUCCESSFULLY ===");
         }
 
         @Bean
-        @Order(1)
+        @Order(10)
         public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
 
                 OAuth2AuthorizationServerConfigurer authorizationServerConfigurer = OAuth2AuthorizationServerConfigurer
                                 .authorizationServer();
 
                 http
-                                .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+                                .securityMatcher(
+                                                "/oauth2/authorize",
+                                                "/oauth2/token",
+                                                "/oauth2/jwks",
+                                                "/userinfo",
+                                                "/connect/register",
+                                                "/oauth2/.*",
+                                                "/oauth/.*")
+                                // Add OAuth2ParameterSavingFilter BEFORE the authorization server filters
+                                // This saves OAuth2 params to cookies before redirecting to login
+                                .addFilterBefore(oauth2ParameterSavingFilter,
+                                                UsernamePasswordAuthenticationFilter.class)
                                 .with(authorizationServerConfigurer, Customizer.withDefaults())
                                 .authorizeHttpRequests(authorize -> authorize
                                                 .anyRequest().authenticated());
@@ -69,18 +94,29 @@ public class OAuth2AuthorizationServer {
                 // Habilitar OpenID Connect
                 http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                                 .oidc(Customizer.withDefaults())
-                                .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint.consentPage(""));
+                                .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint
+                                                .consentPage("/oauth2/consent"));
 
                 // Manejo de excepciones
-                http.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(
-                                new LoginUrlAuthenticationEntryPoint("/login")));
+                http.exceptionHandling(exceptions -> exceptions
+                                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
 
                 return http.build();
         }
 
         @Bean
         public RegisteredClientRepository registeredClientRepository(PasswordEncoder passwordEncoder) {
+                System.out.println("==========================================");
+                System.out.println("🚀 registeredClientRepository EJECUTÁNDOSE");
+                System.out.println("==========================================");
+
                 List<RegisteredClient> clients = new ArrayList<>();
+
+                String cineClientSecret = System.getenv("CINE_PLATFORM_SECRET");
+                String cineRedirectUri = System.getenv("CINE_PLATFORM_REDIRECT_URI");
+
+                System.out.println("CINE_PLATFORM_SECRET: " + cineClientSecret);
+                System.out.println("CINE_PLATFORM_REDIRECT_URI: " + cineRedirectUri);
 
                 log.debug("=== DIAGNÓSTICO CLIENT PROPERTIES ===");
                 log.debug("clientProperties es null? {}", clientProperties == null);
@@ -90,6 +126,7 @@ public class OAuth2AuthorizationServer {
                                 log.debug("Número de clientes en properties: {}", clientProperties.getClients().size());
                         }
                 }
+
                 // Si hay clientes configurados en properties, usarlos
                 if (clientProperties != null && clientProperties.getClients() != null
                                 && !clientProperties.getClients().isEmpty()) {
@@ -143,12 +180,16 @@ public class OAuth2AuthorizationServer {
                                 }
 
                                 clients.add(builder.build());
+                                System.out.println("✅ Cliente cine-platform añadido a la lista");
                         }
                 } else {
-                        // Clientes por defecto si no hay configuración
+                        System.out.println("❌ No se encontraron variables de entorno para cine-platform");
+                        log.warn("No se encontraron clientes en properties. Usando cliente por defecto.");
                         clients.add(createDefaultClient(passwordEncoder));
                 }
 
+                System.out.println("📦 Número total de clientes: " + clients.size());
+                System.out.println("==========================================");
                 return new InMemoryRegisteredClientRepository(clients);
         }
 
@@ -160,7 +201,7 @@ public class OAuth2AuthorizationServer {
                                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                                 .clientSettings(ClientSettings.builder()
-                                                .requireAuthorizationConsent(true)
+                                                .requireAuthorizationConsent(false)
                                                 .requireProofKey(true)
                                                 .build())
                                 .tokenSettings(TokenSettings.builder()
@@ -192,15 +233,13 @@ public class OAuth2AuthorizationServer {
         }
 
         private static KeyPair generateRsaKey() {
-                KeyPair keyPair;
                 try {
                         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
                         keyPairGenerator.initialize(2048);
-                        keyPair = keyPairGenerator.generateKeyPair();
+                        return keyPairGenerator.generateKeyPair();
                 } catch (Exception ex) {
-                        throw new IllegalStateException(ex);
+                        throw new IllegalStateException("Error generando par de claves RSA", ex);
                 }
-                return keyPair;
         }
 
         @Bean
@@ -215,6 +254,12 @@ public class OAuth2AuthorizationServer {
 
         @Bean
         public AuthorizationServerSettings authorizationServerSettings() {
-                return AuthorizationServerSettings.builder().build();
+                return AuthorizationServerSettings.builder()
+                                .authorizationEndpoint("/oauth2/authorize")
+                                .tokenEndpoint("/oauth2/token")
+                                .jwkSetEndpoint("/oauth2/jwks")
+                                .oidcUserInfoEndpoint("/userinfo")
+                                .oidcClientRegistrationEndpoint("/connect/register")
+                                .build();
         }
 }

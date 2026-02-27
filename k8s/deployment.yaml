@@ -13,131 +13,180 @@ spec:
       labels:
         app: oauth2-server
     spec:
-      containers:
-        - name: oauth2-server
-          image: felixmurcia/oauth2server:v20260224-2009
+      initContainers:
+      - name: generate-keystore
+        image: felixmurcia/oauth2server:v20260227-1320
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "=== Instalando openssl ==="
+            apk add --no-cache openssl
+
+            echo "=== Copiando certificados ==="
+            cp /certs-secret/tls.crt /keystore/
+            cp /certs-secret/tls.key /keystore/
+
+            echo "=== Generando keystore ==="
+            cd /keystore
+
+            echo "Archivos disponibles:"
+            ls -la
+
+            openssl pkcs12 -export \
+              -in tls.crt \
+              -inkey tls.key \
+              -out keystore.p12 \
+              -name tomcat \
+              -password pass:${KEYSTORE_PASSWORD}
+
+            echo "=== keystore generado ==="
+            ls -la keystore.p12
+        env:
+        - name: SERVER_FORWARD_HEADERS_STRATEGY
+          value: "framework"
+        - name: SERVER_USE_FORWARD_HEADERS
+          value: "true"
+        - name: SERVER_ADDRESS
+          value: "0.0.0.0"
           
-          command: ["java"]
-          args: ["-jar", "/app/app.jar", "--spring.profiles.active=prod"]
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tls-keystore-popos
+              key: keystore-password
+        volumeMounts:
+        - name: tls-certs-secret
+          mountPath: /certs-secret
+          readOnly: true
+        - name: tls-keystore
+          mountPath: /keystore
 
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: prod
-
-            - name: JWT_SIGNING_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: jwt-signing-key
-
-            - name: JWT_AUDIENCE
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: oauth-audience
-
-            - name: OAUTH_REDIRECT_URI
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: oauth-redirect-uri
-
-            - name: DEFAULT_ADMIN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: default-admin-username
-
-            - name: DEFAULT_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: default-admin-password
-
-            - name: DEFAULT_USER_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: default-user-username
-
-            - name: DEFAULT_USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: default-user-password
-
-            - name: ISSUER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: issuer-url
-
-            - name: H2_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: h2-username
-
-            - name: H2_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: h2-password
-
-            - name: CINE_PLATFORM_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: CINE_PLATFORM_SECRET
-
-            - name: CINE_PLATFORM_REDIRECT_URI
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: CINE_PLATFORM_REDIRECT_URI
-
-            - name: TRANSCRIBEAPP_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: TRANSCRIBEAPP_SECRET
-
-            - name: TRANSCRIBEAPP_REDIRECT_URI
-              valueFrom:
-                secretKeyRef:
-                  name: oauth2-secrets
-                  key: TRANSCRIBEAPP_REDIRECT_URI
-
-            - name: SERVER_PORT
-              value: "8443"
-            - name: SERVER_SSL_ENABLED
-              value: "true"
-            - name: SERVER_SSL_KEY_STORE
-              value: "/certs/keystore.p12"
-            - name: SERVER_SSL_KEY_STORE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: tls-keystore
-                  key: keystore-password
-
-          ports:
-            - containerPort: 8080
-              name: http
-            - containerPort: 8443
-              name: https
-              hostPort: 30444
-
-          volumeMounts:
-            - name: oauth2-data
-              mountPath: /data
-            - name: tls-certs
-              mountPath: /certs
-              readOnly: true
+      containers:
+      - name: oauth2-server
+        image: felixmurcia/oauth2server:v20260227-1320
+        command:
+          - java
+          - -jar
+          - /app/app.jar
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: prod
+        - name: JWT_SIGNING_KEY
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: jwt-signing-key
+        - name: JWT_AUDIENCE
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: oauth-audience
+        - name: OAUTH_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: oauth-redirect-uri
+        - name: DEFAULT_ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: default-admin-username
+        - name: DEFAULT_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: default-admin-password
+        - name: DEFAULT_USER_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: default-user-username
+        - name: DEFAULT_USER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: default-user-password
+        - name: ISSUER_URL
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: issuer-url
+        - name: H2_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: h2-username
+        - name: H2_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: h2-password
+        - name: CINE_PLATFORM_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: CINE_PLATFORM_SECRET
+        - name: CINE_PLATFORM_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: CINE_PLATFORM_REDIRECT_URI
+        - name: TRANSCRIBEAPP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: TRANSCRIBEAPP_SECRET
+        - name: TRANSCRIBEAPP_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: TRANSCRIBEAPP_REDIRECT_URI
+        - name: SERVER_PORT
+          value: "8443"
+        - name: SERVER_SSL_ENABLED
+          value: "true"
+        - name: SERVER_SSL_KEY_STORE
+          value: "/keystore/keystore.p12"
+        - name: SERVER_SSL_KEY_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tls-keystore-popos
+              key: keystore-password
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tls-keystore-popos
+              key: keystore-password
+        - name: SSL_CERT_FILE
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: SSL_CERT_FILE
+        - name: SSL_KEY_FILE
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: SSL_KEY_FILE
+        - name: SSL_KEY_STORE
+          value: "/keystore/keystore.p12"
+        ports:
+        - containerPort: 8443
+          name: https
+          hostPort: 30444
+        volumeMounts:
+        - name: oauth2-data
+          mountPath: /data
+        - name: tls-keystore
+          mountPath: /keystore
+          readOnly: true
 
       volumes:
-        - name: oauth2-data
-          persistentVolumeClaim:
-            claimName: oauth2-pvc
-        - name: tls-certs
-          secret:
-            secretName: tls-keystore
+      - name: oauth2-data
+        persistentVolumeClaim:
+          claimName: oauth2-pvc
+      - name: tls-certs-secret
+        secret:
+          secretName: tls-keystore-popos
+      - name: tls-keystore
+        emptyDir: {}

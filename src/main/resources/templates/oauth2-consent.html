@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth2 Consent</title>
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔐 Autorizar Aplicación</h1>
+        
+        <p>La aplicación <strong><span th:text="${clientId}">client</span></strong> está solicitando acceso a tu cuenta.</p>
+        
+        <p>Por favor revisa los siguientes permisos:</p>
+        
+        <form th:action="@{/oauth2/authorize}" method="post">
+            <input type="hidden" name="client_id" th:value="${clientId}">
+            <input type="hidden" name="state" th:value="${state}">
+            <input type="hidden" name="scope" th:value="${scope}">
+            
+            <div class="form-group">
+                <label><strong>Permisos solicitados:</strong></label>
+                <ul>
+                    <li th:each="s : ${scopes}" th:text="${s}">scope</li>
+                </ul>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="consent" required>
+                    Acepto compartir mi información con esta aplicación
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" name="approve" value="true" class="btn btn-primary">Autorizar</button>
+                <button type="submit" name="deny" value="true" class="btn btn-secondary">Denegar</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

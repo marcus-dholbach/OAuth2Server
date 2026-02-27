@@ -57,6 +57,8 @@ kubectl apply -f k8s/pvc.yaml
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/ingress.yaml
+kubectl apply -f k8s/tls-secret.yaml
+
 
 echo "======================================"
 echo "  🔄 Reiniciando pod"

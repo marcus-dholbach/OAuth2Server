@@ -42,6 +42,7 @@ git
 ### Data ###
 data/oauth2db.mv.db
 k8s/secrets.yaml
+k8s/tls-secret.yaml
 
 # Flyway
 src/main/resources/db/migration/*
@@ -49,4 +50,10 @@ src/main/resources/data.sql
 
 server.log
 
-keystore.p12
+*.p12
+*.crt
+*.key
+*.jks
+*.pem
+*.cer
+*.pfx
