@@ -4,6 +4,7 @@ metadata:
   name: oauth2-server
   namespace: auth
 spec:
+  revisionHistoryLimit: 2
   replicas: 1
   selector:
     matchLabels:
@@ -15,7 +16,7 @@ spec:
     spec:
       initContainers:
       - name: generate-keystore
-        image: felixmurcia/oauth2server:v20260302-1406
+        image: felixmurcia/oauth2server:v20260302-1754
         command:
           - /bin/sh
           - -c
@@ -57,7 +58,7 @@ spec:
 
       containers:
       - name: oauth2-server
-        image: felixmurcia/oauth2server:v20260302-1406
+        image: felixmurcia/oauth2server:v20260302-1754
         command:
           - java
           - -jar
