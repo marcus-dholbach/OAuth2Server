@@ -1,233 +1,51 @@
-# 📘 **GUÍA COMPLETA DE OPERACIONES – KUBERNETES + DOCKER + OAUTH2SERVER**
+# 📘 **GUÍA COMPLETA DE OPERACIONES – DOCKER + OAUTH2SERVER**
 
 ---
 
-# 🟦 1. COMANDOS GENERALES DE KUBERNETES
+# 🟦 1. COMANDOS GENERALES DE DOCKER
 
-### 🔍 Ver todos los recursos de todos los namespaces
+### 🔍 Ver contenedores en ejecución
 ```bash
-kubectl get all --all-namespaces
+docker ps
 ```
 
-### 📦 Listar namespaces
+### 📦 Ver todos los contenedores
 ```bash
-kubectl get namespaces
+docker ps -a
 ```
 
-### 🧩 Ver todos los pods
+### 🧩 Ver imágenes
 ```bash
-kubectl get pods -A
-```
-
-### 🖥️ Ver nodos
-```bash
-kubectl get nodes
+docker images
 ```
 
 ---
 
-# 🟩 2. NAMESPACE **cine** (cine-platform)
+# 🟩 2. OAuth2Server con Docker Compose
 
-## 🔧 Recursos y despliegues
-
-### Ver deployments
+### Iniciar servicios
 ```bash
-kubectl get deployments -n cine
+docker-compose up --build
 ```
 
-### Aplicar todos los YAML del directorio k3s/
+### Ver logs
 ```bash
-kubectl apply -f k3s/ -n cine
+docker-compose logs -f
 ```
 
-### Ver PVCs
+### Detener servicios
 ```bash
-kubectl get pvc -n cine
+docker-compose down
 ```
 
-### Ver secret principal
+### Ver estado de servicios
 ```bash
-kubectl get secret cine-platform-secrets -n cine
-```
-
-### Ver secrets y configmaps
-```bash
-kubectl get secret -n cine
-kubectl get configmap -n cine
+docker-compose ps
 ```
 
 ---
 
-## 📜 Logs y debugging
-
-### Logs de pods concretos
-```bash
-kubectl logs -n cine cine-platform-75c49667cc-4nh7d
-kubectl logs -n cine pocketbase-645b664f8f-244qb
-```
-
-### Describe pod
-```bash
-kubectl describe pod -n cine cine-platform-8ccc9c75b-5lqrl
-```
-
----
-
-## 🔄 Reinicios y estado
-
-### Reiniciar app por label
-```bash
-kubectl delete pod -n cine -l app=cine-platform
-```
-
-### Ver estado de pods
-```bash
-kubectl get pods -n cine
-```
-
-### Ver todos los recursos del namespace
-```bash
-kubectl get all -n cine
-```
-
----
-
-## 🐚 Acceso al pod
-
-```bash
-kubectl exec -n cine -it <NOMBRE_DEL_POD> -- sh
-```
-
----
-
-## 📦 Aplicar configuraciones específicas
-
-```bash
-kubectl apply -f ./k3s/cine-config.yaml
-kubectl apply -f ./k3s/cine-deployment.yaml
-kubectl apply -f ./k3s/cine-service.yaml
-```
-
----
-
-## 🧹 Borrar PVC (si queda atascado con finalizers)
-
-```bash
-kubectl patch pvc oauth2-pvc -n auth --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
-```
-
----
-
-## 🔁 Reiniciar deployment
-```bash
-kubectl rollout restart deployment/cine-platform -n cine
-```
-
----
-
-# 🟧 3. NAMESPACE **default** (transcriberapp / oauth2-server)
-
-## 📜 Logs
-
-### Logs por label
-```bash
-kubectl logs -n default -l app=oauth2-server --tail=200
-```
-
-### Logs de un pod concreto
-```bash
-kubectl logs -n default <nombre-del-pod>
-```
-
----
-
-## 🔧 Recursos
-
-### Ver deployments
-```bash
-kubectl get deployments -n default
-```
-
-### Aplicar todos los YAML
-```bash
-kubectl apply -f k3s/ -n default
-```
-
-### Ver PVCs
-```bash
-kubectl get pvc -n default
-```
-
-### Ver secret principal
-```bash
-kubectl get secret transcriberapp-secrets -n default
-```
-
-### Ver secrets y configmaps
-```bash
-kubectl get secret -n default
-kubectl get configmap -n default
-```
-
----
-
-## 🧪 Debugging
-
-### Describe pod
-```bash
-kubectl describe pod -n default transcriberapp-8ccc9c75b-5lqrl
-```
-
----
-
-## 🔄 Reinicios
-
-### Reiniciar app por label
-```bash
-kubectl delete pod -n default -l app=transcriberapp
-```
-
-### Ver estado de pods
-```bash
-kubectl get pods -n default
-```
-
-### Reiniciar deployment
-```bash
-kubectl rollout restart deployment/transcriberapp -n default
-```
-
----
-
-## 🐚 Acceso al pod
-
-```bash
-kubectl exec -n default -it <NOMBRE_DEL_POD> -- sh
-```
-
----
-
-## 📦 Aplicar configuraciones específicas
-
-```bash
-kubectl apply -f ./k3s/deployment.yaml
-kubectl apply -f ./k3s/service.yaml
-kubectl apply -f ./k3s/ingress/transcriberapp-ingressroute.yaml
-kubectl apply -f ./k3s/storage/transcriberapp-pvc.yaml
-```
-
----
-
-## 🚀 Importar imagen local en k3s
-
-```bash
-docker save oauth2-server:latest -o oauth2-server.tar
-sudo k3s ctr images import oauth2-server.tar
-```
-
----
-
-# 🟥 4. OAuth2Server (local)
+# 🟧 3. OAuth2Server (local sin Docker)
 
 ## 🔧 Build y ejecución local
 
@@ -251,63 +69,53 @@ mvn spring-boot:run -X
 ## 🐳 Docker local
 
 ```bash
-docker build -t oauth2server .
-docker run -p 8080:8080 oauth2server
+docker build -t mi-oauth2-server .
+docker run -p 8080:8080 mi-oauth2-server
 ```
 
 ```bash
 mvn clean package
-docker build -t oauth2-server:latest .
+docker build -t mi-oauth2-server:latest .
 ```
 
 ---
 
-# 🟪 5. BBDD H2 en Kubernetes (namespace auth)
+# 🟪 4. PostgreSQL (Base de datos)
 
-## 🐚 Entrar al pod
+## 🐚 Conectar a PostgreSQL
 
+Si usas docker-compose, PostgreSQL está disponible en:
+- Host: localhost
+- Puerto: 5432
+- Base de datos: oauth2_dev
+- Usuario: oauth2_user
+- Contraseña: oauth2_dev_password
+
+### Conectar con psql
 ```bash
-kubectl exec -it -n auth $(kubectl get pod -n auth -l app=oauth2-server -o jsonpath='{.items[0].metadata.name}') -- bash
-```
-
-o
-
-```bash
-kubectl exec -n auth -it <NOMBRE_DEL_POD> -- sh
-```
-
----
-
-## 🧹 Borrar PVC
-
-```bash
-kubectl delete pvc oauth2-pvc -n auth --force --grace-period=0
-kubectl patch pvc oauth2-pvc -n auth --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
-kubectl apply -f ./k8s/pvc.yaml
+docker exec -it <NOMBRE_CONTENEDOR_POSTGRES> psql -U oauth2_user -d oauth2_dev
 ```
 
 ---
 
-## 📤 Copiar la base de datos desde el pod al host
+## 📤 Copiar base de datos
 
 ```bash
-kubectl cp auth/<POD_NAME>:/app/data/oauth2db.mv.db ./oauth2db.mv.db
-```
+# Exportar
+docker exec <CONTENEDOR> pg_dump -U oauth2_user oauth2_dev > backup.sql
 
-## 📥 Copiar la base de datos desde el host al pod
-
-```bash
-kubectl cp ./oauth2db.mv.db auth/<POD_NAME>:/app/data/oauth2db.mv.db
+# Importar
+docker exec -i <CONTENEDOR> psql -U oauth2_user oauth2_dev < backup.sql
 ```
 
 ---
 
-## 🔐 Cambiar contraseña en H2
+## 🔐 Cambiar contraseña de usuario
 
 ```sql
 UPDATE usuarios
-SET password = '$2b$12$t3XDd8U5098eeYodNTlJp.u6Rze/P8zdjmEZ.SklfEl6lFvMyUCtS'
-WHERE username = 'juanaco';
+SET password = '$2b$12$...hash bcrypt...'
+WHERE username = 'admin';
 ```
 
 ---
@@ -317,64 +125,40 @@ WHERE username = 'juanaco';
 ```bash
 python3 - <<'PY'
 import bcrypt
-print(bcrypt.hashpw(b"user2", bcrypt.gensalt(rounds=10)).decode())
+print(bcrypt.hashpw(b"tu-contraseña", bcrypt.gensalt(rounds=10)).decode())
 PY
 ```
 
 ---
 
-# 🟦 6. Docker Hub privado (imagePullSecret)
-
-```bash
-kubectl create secret docker-registry regcred \
-  --docker-server=https://index.docker.io/v1/ \
-  --docker-username=USERNAME \
-  --docker-password="PASSWORD_DE_DOCKER_HUB" \
-  --docker-email="EMAIL" \
-  -n auth
-```
-
----
-
-# 🟫 7. Variables de entorno en producción (DB, OAuth, JWT)
+# 🟫 5. Variables de entorno en producción
 
 ## 📌 ¿Dónde se definen?
 
-👉 **En un Secret de Kubernetes (k8s/secrets.yaml).**
+Las variables de entorno se configuran en el archivo `application-prod.properties` o como variables de entorno del sistema.
 
-### 1) Valores codificados en base64 (ya incluidos en secrets.yaml)
+### Variables principales
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: oauth2-secrets
-  namespace: auth
-type: Opaque
-data:
-  jwt-signing-key: <clave_base64>
-  oauth-client-id: <client_id_base64>
-  oauth-client-secret: <client_secret_base64>
-  oauth-redirect-uri: <redirect_uri_base64>
-  oauth-audience: <audience_base64>
-```
+```bash
+# Base de datos
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/oauth2_prod
+SPRING_DATASOURCE_USERNAME=oauth2_user
+SPRING_DATASOURCE_PASSWORD=tu-contraseña-segura
 
-### 2) Referenciar en el Deployment
+# OAuth2
+MI_EJEMPLO_APP_SECRET=tu-secreto
+MI_EJEMPLO_APP_REDIRECT_URI=https://tu-dominio.com/callback
 
-```yaml
-env:
-  - name: JWT_SIGNING_KEY
-    valueFrom:
-      secretKeyRef:
-        name: oauth2-secrets
-        key: jwt-signing-key
+# JWT
+JWT_SIGNING_KEY=tu-clave-secreta-jwt
+ISSUER_URL=https://tu-dominio.com
 ```
 
 ---
 
-# 🟧 8. Comandos adicionales que pediste
+# 🟬 6. Comandos adicionales
 
-## 🔌 Port-forward del servicio OAuth2Server
+## 🔌 Port-forward (Kubernetes - si aplica)
 
 ```bash
 kubectl port-forward -n auth svc/oauth2-server 8080:8080
@@ -383,42 +167,64 @@ kubectl port-forward -n auth svc/oauth2-server 8080:8080
 ## 📜 Logs en tiempo real
 
 ```bash
-kubectl logs -n auth -l app=oauth2-server --tail=200 -f
+# Docker
+docker-compose logs -f oauth2server
+
+# Local
+tail -f logs/oauth2server.log
 ```
 
 ## 📄 Documentación API (Swagger UI)
 
-```bash
-http://localhost:8080/swagger-ui.html
+```
+http://localhost:8080/swagger-ui/index.html
 ```
 
-## � Petición OAuth2 (password grant)
+## 🔁 Reiniciar OAuth2Server
 
 ```bash
-curl -X POST \
-  -u "proveedor-oauth:123456" \
-  -d "grant_type=password" \
-  -d "username=admin" \
-  -d "password=admin" \
-  http://localhost:8080/oauth/token
+# Docker
+docker-compose restart
+
+# Local
+# Detén y vuelve a ejecutar el JAR
 ```
 
-> **Nota:** Las credenciales `proveedor-oauth:123456` corresponden al perfil de desarrollo. En producción, usa las credenciales configuradas en `k8s/secrets.yaml`.
+---
 
-## 🔁 Reiniciar deployment oauth2-server
+## 🧼 Crear contenedor temporal (si usas Kubernetes)
 
 ```bash
-kubectl rollout restart deployment oauth2-server -n auth
+kubectl run cleaner -n auth --image=mi-oauth2-server:latest --command -- sleep 3600
 ```
 
-## 🧼 Crear pod temporal (cleaner)
+---
 
-```bash
-kubectl run cleaner -n auth --image=felixmurcia/oauth2server:v20260211-1751 --command -- sleep 3600
-```
-
-## 🧹 Eliminar finalizers de un PVC (versión merge)
+## 🧹 Kubernetes: Eliminar finalizers de un PVC
 
 ```bash
 kubectl patch pvc oauth2-pvc -n auth -p '{"metadata":{"finalizers":null}}' --type=merge
+```
+
+---
+
+## 🟭 7. Troubleshooting
+
+### Verificar que PostgreSQL está disponible
+
+```bash
+docker exec -it <CONTENEDOR_POSTGRES> pg_isready -U oauth2_user
+```
+
+### Ver logs de OAuth2Server
+
+```bash
+docker-compose logs -f --tail=100 oauth2server
+```
+
+### Reiniciar servicios
+
+```bash
+docker-compose down
+docker-compose up --build
 ```

@@ -17,11 +17,10 @@ public class UserDtoMapper {
         dto.setFullName(user.getFullName());
         dto.setEmail(user.getEmail());
         dto.setRoles(
-            user.getRoles()
-                .stream()
-                .map(Enum::name)
-                .collect(Collectors.toSet())
-        );
+                user.getRoles()
+                        .stream()
+                        .map(role -> role.getName())
+                        .collect(Collectors.toSet()));
         return dto;
     }
 }

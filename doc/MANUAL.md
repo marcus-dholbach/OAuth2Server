@@ -17,6 +17,9 @@ Este manual te guiará paso a paso para configurar y ejecutar el servidor OAuth2
 3. **Git** (para clonar el repositorio)
    - Verificar instalación: `git --version`
 
+4. **Docker y Docker Compose** (opcional, para ejecutar con PostgreSQL)
+   - Verificar instalación: `docker --version`
+
 ---
 
 ## Paso 1: Clonar el Repositorio
@@ -29,16 +32,36 @@ cd OAuth2Server
 
 ---
 
-## Paso 2: Configurar Variables de Entorno (Opcional)
+## Paso 2: Configuración de la Base de Datos
 
-Si deseas usar variables de entorno en lugar de archivos de propiedades:
+La aplicación usa **PostgreSQL** en todos los entornos (desarrollo y producción).
+
+### Opción A: Docker Compose (Recomendado para desarrollo)
 
 ```bash
-# Linux/Mac
-export SPRING_PROFILES_ACTIVE=dev
+# Ejecutar PostgreSQL y OAuth2Server
+docker-compose up --build
+```
 
-# Windows (PowerShell)
-$env:SPRING_PROFILES_ACTIVE="dev"
+Esto iniciara:
+- PostgreSQL en el puerto 5432
+- OAuth2Server en el puerto 8080
+
+### Opción B: PostgreSQL local
+
+1. Instala PostgreSQL
+2. Crea una base de datos:
+
+```bash
+createdb oauth2_dev
+```
+
+3. Configura las credenciales en `application-dev.properties`:
+
+```properties
+spring.datasource.url=jdbclocalhost:5432:postgresql:///oauth2_dev
+spring.datasource.username=oauth2_user
+spring.datasource.password=oauth2_dev_password
 ```
 
 ---
@@ -94,7 +117,18 @@ curl -s http://localhost:8080/login | head -20
 
 ---
 
-## Paso 6: Obtener Token de Acceso
+## Paso 6: Credenciales por Defecto
+
+Al iniciar por primera vez, se crea un usuario administrador:
+
+| Campo | Valor |
+|-------|-------|
+| Usuario | admin |
+| Contraseña | admin123 |
+
+---
+
+## Paso 7: Obtener Token de Acceso
 
 ### Flujo Authorization Code + PKCE
 
@@ -104,8 +138,8 @@ curl -s http://localhost:8080/login | head -20
 # Redirigir al usuario a esta URL
 http://localhost:8080/oauth2/authorize?
     response_type=code&
-    client_id=proveedor-oauth&
-    redirect_uri=http://localhost:8080/callback&
+    client_id=mi-ejemplo-app&
+    redirect_uri=http://localhost:3000/callback&
     scope=openid%20profile%20read%20write&
     code_challenge=...&
     code_challenge_method=S256
@@ -116,10 +150,10 @@ http://localhost:8080/oauth2/authorize?
 ```bash
 curl -v -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -u "proveedor-oauth:123456" \
+  -u "mi-ejemplo-app:mi-ejemplo-secreto" \
   -d "grant_type=authorization_code" \
   -d "code=AUTHORIZATION_CODE" \
-  -d "redirect_uri=http://localhost:8080/callback" \
+  -d "redirect_uri=http://localhost:3000/callback" \
   -d "code_verifier=CODE_VERIFIER" \
   http://localhost:8080/oauth2/token
 ```
@@ -130,7 +164,7 @@ curl -v -X POST \
 # Obtener token para máquina-a-máquina
 curl -v -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -u "proveedor-oauth:123456" \
+  -u "mi-ejemplo-app:mi-ejemplo-secreto" \
   -d "grant_type=client_credentials" \
   -d "scope=read write" \
   http://localhost:8080/oauth2/token
@@ -176,7 +210,7 @@ function base64URLEncode(buffer) {
 ```javascript
 const authUrl = new URL('http://localhost:8080/oauth2/authorize');
 authUrl.searchParams.set('response_type', 'code');
-authUrl.searchParams.set('client_id', 'cine-platform');
+authUrl.searchParams.set('client_id', 'mi-ejemplo-app');
 authUrl.searchParams.set('redirect_uri', 'http://localhost:3000/callback');
 authUrl.searchParams.set('scope', 'openid profile read write');
 authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -193,7 +227,7 @@ async function exchangeCodeForToken(code, codeVerifier) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic ' + btoa('cine-platform:cine-platform-secret')
+            'Authorization': 'Basic ' + btoa('mi-ejemplo-app:mi-ejemplo-secreto')
         },
         body: new URLSearchParams({
             grant_type: 'authorization_code',
@@ -217,8 +251,8 @@ async function exchangeCodeForToken(code, codeVerifier) {
     <pre id="result"></pre>
     
     <script>
-        const CLIENT_ID = 'cine-platform';
-        const CLIENT_SECRET = 'cine-platform-secret';
+        const CLIENT_ID = 'mi-ejemplo-app';
+        const CLIENT_SECRET = 'mi-ejemplo-secreto';
         const REDIRECT_URI = 'http://localhost:3000/callback';
         const AUTH_SERVER = 'http://localhost:8080';
         
@@ -290,14 +324,6 @@ async function exchangeCodeForToken(code, codeVerifier) {
 
 ## Configuración de Aplicaciones
 
--- Ejemplo de datos en la tabla usuarios
-
-| username | app           | roles          |
-|----------|---------------|----------------|
-| admin    | cine-platform | USER,ADMIN     |
-| admin    | cine-admin    | ADMIN          |
-| usuario  | cine-platform | USER           |
-
 ### Estructura de Base de Datos
 
 El servidor usa la tabla `USUARIOS` con el campo `app` para distinguir aplicaciones:
@@ -306,43 +332,33 @@ El servidor usa la tabla `USUARIOS` con el campo `app` para distinguir aplicacio
 |-------|-------------|
 | username | Nombre de usuario |
 | password | Contraseña encriptada (BCrypt) |
-| app | Identificador de aplicación (cine-platform, cine-admin, etc.) |
+| app | Identificador de aplicación |
 | roles | Roles del usuario (USER, ADMIN) |
 | fullName | Nombre completo |
 | email | Correo electrónico |
 
-### Clientes OAuth2 Registrados
+### Clientes OAuth2 por Defecto
 
-| client_id | client_secret | redirect_uri | scopes |
-|-----------|---------------|--------------|--------|
-| proveedor-oauth | 123456 | http://localhost:8080/callback | openid, profile, read, write |
-| cine-platform | cine-platform-secret | http://localhost:3000/callback | openid, profile, read, write |
-| cine-admin | cine-admin-secret | http://localhost:4000/callback | openid, profile, admin:users, admin:roles |
-| otra-app | otra-app-secret | http://localhost:5000/callback | openid, profile |
+La aplicación viene con dos clientes de ejemplo configurados en `application-dev.properties`:
+
+| client_id | redirect_uri |
+|-----------|--------------|
+| mi-ejemplo-app | http://localhost:3000/callback |
+| mi-segunda-app | http://localhost:9000/callback |
 
 ### Agregar Nuevo Cliente
 
-Para agregar un nuevo cliente, modifica [`OAuth2AuthorizationServer.java`](src/main/java/com/oauth/rest/security/oauth2/OAuth2AuthorizationServer.java):
+Para agregar un nuevo cliente, modifica `application-dev.properties`:
 
-```java
-// Agregar nuevo cliente
-RegisteredClient nuevoCliente = RegisteredClient.withId(UUID.randomUUID().toString())
-    .clientId("nuevo-cliente")
-    .clientSecret(passwordEncoder.encode("secreto"))
-    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-    .clientSettings(ClientSettings.builder()
-        .requireAuthorizationConsent(true)
-        .requireProofKey(true)
-        .build())
-    .tokenSettings(TokenSettings.builder()
-        .accessTokenTimeToLive(Duration.ofSeconds(3600))
-        .refreshTokenTimeToLive(Duration.ofSeconds(86400))
-        .build())
-    .scope("openid")
-    .scope("profile")
-    .redirectUri("http://tu-app.com/callback")
-    .build();
+```properties
+# Nuevo cliente
+oauth2.clients[2].client-id=mi-nueva-app
+oauth2.clients[2].client-secret=mi-nueva-secreto
+oauth2.clients[2].redirect-uris[0]=http://localhost:4000/callback
+oauth2.clients[2].scopes[0]=openid
+oauth2.clients[2].scopes[1]=profile
+oauth2.clients[2].scopes[2]=read
+oauth2.clients[2].authorization-grant-types=authorization_code,client_credentials,refresh_token
 ```
 
 ---
@@ -351,7 +367,7 @@ RegisteredClient nuevoCliente = RegisteredClient.withId(UUID.randomUUID().toStri
 
 ### Perfil Dev (desarrollo)
 
-Usa H2 en memoria (no persiste datos):
+Usa PostgreSQL (configurado en docker-compose):
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
@@ -359,18 +375,36 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 ### Perfil Prod (producción)
 
-Requiere PostgreSQL configurado:
+Requiere PostgreSQL configurado y variables de entorno:
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
-Configurar en [`application-prod.properties`](src/main/resources/application-prod.properties):
+Configurar variables de entorno:
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/oauth2db
-spring.datasource.username=postgres
-spring.datasource.password=tu_password
+```bash
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/oauth2_prod
+SPRING_DATASOURCE_USERNAME=oauth2_user
+SPRING_DATASOURCE_PASSWORD=tu_password
+```
+
+---
+
+## Añadir Nuevos Usuarios
+
+### Mediante API REST
+
+```bash
+curl -X POST http://localhost:8080/user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "juan",
+    "password": "contraseña123",
+    "email": "juan@ejemplo.com",
+    "app": "mi-ejemplo-app",
+    "role": "USER"
+  }'
 ```
 
 ---
@@ -399,7 +433,7 @@ mvn verify
 | /login | GET | Página de login | No |
 | /user | POST | Crear usuario | No |
 | /user/me | GET | Info usuario actual | Sí |
-| /h2-console | GET | Consola H2 | No (solo dev) |
+| /swagger-ui | GET | Documentación API | ADMIN |
 
 ---
 
@@ -434,10 +468,9 @@ kill -9 <PID>
 ### Error: "Database not found"
 
 ```bash
-# Verificar que la base de datos existe
-# Para H2: se crea automáticamente
-# Para PostgreSQL: crear base de datos manualmente
-createdb oauth2db
+# Verificar que la base de datos PostgreSQL existe
+# Crear base de datos manualmente si es necesario
+createdb oauth2_dev
 ```
 
 ### Error: "Could not resolve placeholder"
@@ -480,7 +513,6 @@ OAuth2Server/
 │   │   │   ├── PasswordEncoderConfig.java
 │   │   │   └── oauth2/    # Componentes OAuth2
 │   │   │       ├── OAuth2AuthorizationServer.java
-│   │   │       ├── OAuth2SavedRequestAwareAuthSuccessHandler.java
 │   │   │       └── ...
 │   │   └── service/       # Servicios
 │   └── resources/
@@ -498,11 +530,5 @@ OAuth2Server/
 ## Próximos Pasos
 
 1. **Para producción**: Configurar PostgreSQL y HTTPS
-2. **Para múltiples apps**: Usar el campo `app` en la tabla `USUARIOS`
-3. **Para CI/CD**: Ver scripts en [`k8s/`](k8s/) para Kubernetes
-
----
-
-## Contacto y Soporte
-
-Para reportar problemas o sugerir mejoras, crear un issue en el repositorio de GitHub.
+2. **Registrar nuevas aplicaciones**: Añadir clientes en `application-dev.properties`
+3. **Crear usuarios**: Usar el endpoint `/user` o directamente en la base de datos

@@ -18,7 +18,7 @@ GET /oauth2/authorize
 
 ### Parámetros
 - `response_type`: Debe ser `"code"`
-- `client_id`: ID del cliente (ej: `proveedor-oauth`)
+- `client_id`: ID del cliente (ej: `mi-ejemplo-app`)
 - `redirect_uri`: URI de callback (ej: `http://localhost:3000/callback`)
 - `scope`: scopes separados por espacio (ej: `openid profile read write`)
 - `code_challenge`: Challenge de PKCE
@@ -28,7 +28,7 @@ GET /oauth2/authorize
 ```
 http://localhost:8080/oauth2/authorize?
   response_type=code&
-  client_id=proveedor-oauth&
+  client_id=mi-ejemplo-app&
   redirect_uri=http://localhost:3000/callback&
   scope=openid%20profile%20read%20write&
   code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&
@@ -71,7 +71,7 @@ Canjea el código de autorización por tokens.
 ```bash
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -u "proveedor-oauth:123456" \
+  -u "mi-ejemplo-app:mi-ejemplo-secreto" \
   -d "grant_type=authorization_code" \
   -d "code=CODIGO_RECIBIDO" \
   -d "redirect_uri=http://localhost:3000/callback" \
@@ -101,7 +101,7 @@ Para aplicaciones Machine-to-Machine.
 ```bash
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -u "proveedor-oauth:123456" \
+  -u "mi-ejemplo-app:mi-ejemplo-secreto" \
   -d "grant_type=client_credentials" \
   -d "scope=read write" \
   http://localhost:8080/oauth2/token
@@ -159,6 +159,8 @@ curl -X POST \
   -d '{
         "username": "nuevo",
         "password": "1234",
+        "email": "nuevo@ejemplo.com",
+        "app": "mi-ejemplo-app",
         "role": "USER"
       }' \
   http://localhost:8080/user
@@ -256,4 +258,4 @@ OAuth2Server proporciona:
 - Gestión de usuarios  
 - Seguridad basada en roles  
 - Integración lista para microservicios  
-- Despliegue completo en Kubernetes  
+- Despliegue completo en Docker/Kubernetes

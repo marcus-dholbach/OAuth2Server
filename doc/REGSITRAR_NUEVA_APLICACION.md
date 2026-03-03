@@ -1,6 +1,6 @@
 # 📋 **PASO A PASO: Registrar una nueva aplicación en OAuth2Server**
 
-## **Escenario: Quieres añadir "nueva-app" que corre en http://localhost:6000**
+## **Escenario: Quieres añadir una nueva aplicación que corre en http://localhost:6000**
 
 ---
 
@@ -8,51 +8,24 @@
 
 | Dato | Ejemplo |
 |------|---------|
-| **client_id** | `nueva-app` |
-| **client_secret** | `nueva-app-secret` (o el que elijas) |
+| **client_id** | `mi-nueva-app` |
+| **client_secret** | `mi-nueva-secreto` |
 | **redirect_uri** | `http://localhost:6000/oauth/callback` |
-| **scopes** | `openid profile read write` (o los que necesite) |
+| **scopes** | `openid profile read write` |
 | **Puerto** | `6000` |
 
 ---
 
 ## ✅ **Paso 2: Modificar `application-dev.properties`**
 
-Añade un nuevo bloque al final de la sección de clientes:
+Edita el archivo `src/main/resources/application-dev.properties` y añade un nuevo bloque:
 
 ```properties
 # ============================
-# 📋 MÚLTIPLES CLIENTES OAuth2 (Dinámicos)
-# ============================
-
-# Cliente existente - proveedor-oauth
-oauth2.clients[0].client-id=proveedor-oauth
-oauth2.clients[0].client-secret=123456
-oauth2.clients[0].redirect-uris[0]=http://localhost:8080/callback
-oauth2.clients[0].redirect-uris[1]=http://localhost:5000/oauth/callback
-oauth2.clients[0].scopes[0]=openid
-oauth2.clients[0].scopes[1]=profile
-oauth2.clients[0].scopes[2]=read
-oauth2.clients[0].scopes[3]=write
-oauth2.clients[0].require-consent=true
-oauth2.clients[0].require-proof-key=false
-
-# Cliente existente - cine-platform
-oauth2.clients[1].client-id=cine-platform
-oauth2.clients[1].client-secret=cine-platform-secret
-oauth2.clients[1].redirect-uris[0]=http://localhost:3000/callback
-oauth2.clients[1].scopes[0]=openid
-oauth2.clients[1].scopes[1]=profile
-oauth2.clients[1].scopes[2]=read
-oauth2.clients[1].scopes[3]=write
-oauth2.clients[1].require-consent=true
-oauth2.clients[1].require-proof-key=false
-
-# ============================
 # 🆕 NUEVA APLICACIÓN
 # ============================
-oauth2.clients[2].client-id=nueva-app
-oauth2.clients[2].client-secret=nueva-app-secret
+oauth2.clients[2].client-id=mi-nueva-app
+oauth2.clients[2].client-secret=mi-nueva-secreto
 oauth2.clients[2].redirect-uris[0]=http://localhost:6000/oauth/callback
 oauth2.clients[2].scopes[0]=openid
 oauth2.clients[2].scopes[1]=profile
@@ -60,7 +33,18 @@ oauth2.clients[2].scopes[2]=read
 oauth2.clients[2].scopes[3]=write
 oauth2.clients[2].require-consent=true
 oauth2.clients[2].require-proof-key=false
+oauth2.clients[2].authorization-grant-types=authorization_code,client_credentials,refresh_token
 ```
+
+### Explicación de campos
+
+| Campo | Descripción |
+|-------|-------------|
+| `client-id` | Identificador único de tu aplicación |
+| `client-secret` | Contraseña secreta (no compartir) |
+| `redirect-uris` | URL donde OAuth2 devolverá al usuario |
+| `scopes` | Permisos que solicita la app |
+| `authorization-grant-types` | Tipos de flujo OAuth2 soportados |
 
 ---
 
@@ -77,69 +61,42 @@ oauth2.clients[2].scopes[4]=admin:users
 
 ---
 
-## ✅ **Paso 4: Verificar que el cliente se cargó correctamente**
+## ✅ **Paso 4: Reiniciar OAuth2Server**
 
-1. **Reinicia OAuth2Server**
-2. **Busca en los logs** al arrancar:
+Reinicia el servidor para que cargue la nueva configuración:
 
-```
-=== CLIENTES REGISTRADOS ===
-Cliente: proveedor-oauth -> redirectUri: http://localhost:5000/oauth/callback
-Cliente: cine-platform -> redirectUri: http://localhost:3000/callback
-Cliente: nueva-app -> redirectUri: http://localhost:6000/oauth/callback
-```
+```bash
+# Si usas Docker
+docker-compose down
+docker-compose up --build
 
----
-
-## ✅ **Paso 5: Configurar la nueva aplicación cliente**
-
-En la aplicación `nueva-app`, necesitas configurar:
-
-### **Variables de entorno (`.env` de la app)**
-
-```properties
-# ============================
-# 🔑 OAuth2 Server
-# ============================
-OAUTH2_URL=http://localhost:8080
-OAUTH2_CLIENT_ID=nueva-app
-OAUTH2_CLIENT_SECRET=nueva-app-secret
-OAUTH2_AUTHORIZE_ENDPOINT=/oauth2/authorize
-OAUTH2_TOKEN_ENDPOINT=/oauth/token
-OAUTH2_USERINFO_ENDPOINT=/user/me
-OAUTH2_REDIRECT_URI=http://localhost:6000/oauth/callback
-```
-
-### **En el código de la app (si usas el mismo cliente Python)**
-
-```python
-from oauth_client import OAuth2Client
-
-# Inicializar cliente
-oauth = OAuth2Client()
-# Las variables de entorno ya configuran todo automáticamente
+# Si ejecutas directamente
+java -jar target/oauth2server-0.0.1-SNAPSHOT.jar
 ```
 
 ---
 
-## ✅ **Paso 6: Probar el flujo completo**
+## ✅ **Paso 5: Probar el flujo completo**
 
-### **1. Probar la URL de autorización manualmente**
+### 1. Probar la URL de autorización manualmente
 
 ```
 http://localhost:8080/oauth2/authorize?
   response_type=code&
-  client_id=nueva-app&
+  client_id=mi-nueva-app&
   redirect_uri=http://localhost:6000/oauth/callback&
-  scope=openid profile read write&
+  scope=openid%20profile%20read%20write&
   state=test123
 ```
 
 Deberías ver la página de login.
 
-### **2. Login con admin/Admin1**
+### 2. Login con credenciales por defecto
 
-### **3. Redirección esperada**
+- Usuario: `admin`
+- Contraseña: `admin123`
+
+### 3. Redirección esperada
 
 ```
 http://localhost:6000/oauth/callback?code=XXX&state=test123
@@ -147,47 +104,36 @@ http://localhost:6000/oauth/callback?code=XXX&state=test123
 
 ---
 
-## ✅ **Paso 7: Manejar el callback en la nueva app**
+## ✅ **Paso 6: Obtener el token**
 
-Si la app no tiene implementado el callback, necesitas añadir un endpoint:
+Canjea el código por un token:
 
-```python
-# En tu app Flask/FastAPI/etc.
-@app.route('/oauth/callback')
-def oauth_callback():
-    code = request.args.get('code')
-    state = request.args.get('state')
-    
-    # Verificar state (CSRF)
-    saved_state = session.get('oauth_state')
-    if state != saved_state:
-        return "Error: State mismatch", 400
-    
-    # Canjear código
-    oauth_client = OAuth2Client()
-    success, token_data = oauth_client.exchange_code_for_token(code)
-    
-    if success:
-        session['access_token'] = token_data['access_token']
-        session['logged_in'] = True
-        return redirect('/')
-    else:
-        return f"Error: {token_data}", 400
+```bash
+curl -X POST http://localhost:8080/oauth2/token \
+  -u "mi-nueva-app:mi-nueva-secreto" \
+  -d "grant_type=authorization_code" \
+  -d "code=CODIGO_RECIBIDO" \
+  -d "redirect_uri=http://localhost:6000/oauth/callback"
 ```
 
 ---
 
-## ✅ **Paso 8: Para producción (PKCE)**
+## ✅ **Paso 7: Para producción**
 
-Si quieres activar PKCE:
+En `application-prod.properties`, añade las variables de entorno:
 
-### **En el servidor**
-```properties
-oauth2.clients[2].require-proof-key=true
+```bash
+# Variables de entorno para producción
+MI_NUEVA_APP_SECRET=tu-secreto-produccion
+MI_NUEVA_APP_REDIRECT_URI=https://tu-dominio.com/callback
 ```
 
-### **En el cliente**
-Asegura que el cliente genera y envía `code_challenge` y `code_verifier` (el cliente Python ya lo soporta).
+O en el archivo de propiedades:
+
+```properties
+oauth2.clients[2].client-secret=${MI_NUEVA_APP_SECRET}
+oauth2.clients[2].redirect-uris[0]=${MI_NUEVA_APP_REDIRECT_URI}
+```
 
 ---
 
@@ -198,9 +144,8 @@ Asegura que el cliente genera y envía `code_challenge` y `code_verifier` (el cl
 | 1 | Elegir `client_id` y `client_secret` |
 | 2 | Añadir bloque en `application-dev.properties` |
 | 3 | Reiniciar OAuth2Server |
-| 4 | Configurar variables de entorno en la nueva app |
-| 5 | Probar con `/oauth2/authorize` |
-| 6 | Implementar callback si no existe |
+| 4 | Probar con `/oauth2/authorize` |
+| 5 | Canjear código por token |
 
 ---
 
@@ -209,3 +154,4 @@ Asegura que el cliente genera y envía `code_challenge` y `code_verifier` (el cl
 - El **índice** (`[2]`) debe ser único y consecutivo
 - El `redirect_uri` debe coincidir **exactamente** (incluyendo `/` al final o no)
 - Si la app corre en otro dominio en producción, actualiza `redirect_uris` en el perfil `prod`
+- Usa valores diferentes para desarrollo y producción

@@ -1,49 +1,154 @@
 services:
+  # ===========================================
+  # PostgreSQL Desarrollo
+  # ===========================================
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: oauth2-postgres-dev
+    environment:
+      POSTGRES_DB: oauth2_dev
+      POSTGRES_USER: oauth2_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oauth2_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oauth2_user -d oauth2_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - oauth-network
+    restart: unless-stopped
+
+  # ===========================================
+  # PostgreSQL Producción
+  # ===========================================
+  postgres-prod:
+    image: postgres:15-alpine
+    container_name: oauth2-postgres-prod
+    environment:
+      POSTGRES_DB: oauth2_prod
+      POSTGRES_USER: oauth2_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PROD:-oauth2_prod_password}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oauth2_user -d oauth2_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - oauth-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Servidor OAuth2
+  # ===========================================
   oauth2-server:
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
     build: .
     image: felixmurcia/oauth2server:dev
-    container_name: oauth2server-dev
+    container_name: oauth2server
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     environment:
+      # Perfil activo
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+
+      # ===========================================
+      # OAuth2 Clients Múltiples
+      # ===========================================
+      CINE_PLATFORM_SECRET: ${CINE_PLATFORM_SECRET_DEV}
+      CINE_PLATFORM_REDIRECT_URI: ${CINE_PLATFORM_REDIRECT_URI_DEV}
+      TRANSCRIBEAPP_SECRET: ${TRANSCRIBEAPP_SECRET_DEV}
+      TRANSCRIBEAPP_REDIRECT_URI: ${TRANSCRIBEAPP_REDIRECT_URI_DEV}
       
-      # H2 Database
-      H2_USERNAME: ${H2_USERNAME:-sa}
-      H2_PASSWORD: ${H2_PASSWORD:-}
+      # ===========================================
+      # Database - Configuración por perfil
+      # ===========================================
+      # Desarrollo
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-dev:5432/oauth2_dev
+      SPRING_DATASOURCE_USERNAME: oauth2_user
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-oauth2_dev_password}
       
-      # Puerto
-      PORT: ${PORT:-8080}
+      # Producción (override con POSTGRES_URL_PROD si está definida)
+      #SPRING_DATASOURCE_URL: ${POSTGRES_URL_PROD:-jdbc:postgresql://postgres-prod:5432/oauth2_prod}
+      #SPRING_DATASOURCE_USERNAME: oauth2_user
+      #SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD_PROD:-oauth2_prod_password}
       
-      # Usuarios iniciales
-      DEFAULT_ADMIN_USERNAME: ${DEFAULT_ADMIN_USERNAME}
-      DEFAULT_ADMIN_PASSWORD: ${DEFAULT_ADMIN_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       
-      # OAuth2 Client
+      # ===========================================
+      # JPA - SOLO validate, Flyway es único responsable
+      # ===========================================
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-true}
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      
+      # ===========================================
+      # Flyway - Único responsable del esquema
+      # ===========================================
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      # Dev: clean deshabilitado para evitar borrados accidentales
+      SPRING_FLYWAY_CLEAN_DISABLED: "true"
+      
+      # ===========================================
+      # Configuración por perfil
+      # ===========================================
+      # Dev
+      SERVER_PORT: ${PORT:-8080}
+      SPRING_THYMELEAF_CACHE: "false"
+      
+      # Producción (override si es profile prod)
+      #SERVER_PORT: ${PORT:-8443}
+      #SPRING_THYMELEAF_CACHE: "true"
+      #SPRING_FLYWAY_CLEAN_DISABLED: "false"
+      
+      # ===========================================
+      # OAuth2 Clients
+      # ===========================================
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
       
+      # ===========================================
       # Token validity
+      # ===========================================
       ACCESS_TOKEN_VALIDITY: ${ACCESS_TOKEN_VALIDITY:-86400}
       REFRESH_TOKEN_VALIDITY: ${REFRESH_TOKEN_VALIDITY:-1296000}
       
+      # ===========================================
       # JWT
+      # ===========================================
       ISSUER_URL: ${ISSUER_URL:-http://localhost:8080}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-oauth2-client}
-      
-      # Clave JWT (importante para producción)
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY}
       
-    volumes:
-      - /home/jetson/oauth2db:/app/data
-      - ./logs:/app/logs
     env_file:
       - .env
+    volumes:
+      - ./logs:/app/logs
     command: ["/app/run-dev.sh"]
     restart: unless-stopped
     networks:
       - oauth-network
+
+volumes:
+  postgres_dev_data:
+    name: oauth2_postgres_dev_data
+  postgres_prod_data:
+    name: oauth2_postgres_prod_data
 
 networks:
   oauth-network:

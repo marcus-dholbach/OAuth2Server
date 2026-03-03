@@ -10,8 +10,20 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
-    # No se necesita servicio PostgreSQL para el CI - usamos H2 en memoria
-    # como en el perfil dev
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: oauth2_dev
+          POSTGRES_USER: oauth2_user
+          POSTGRES_PASSWORD: oauth2_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -26,29 +38,244 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean compile -q
+        env:
+          # ===== CONFIGURACIÓN GENERAL =====
+          SERVER_PORT: 8080
+          SERVER_ADDRESS: 0.0.0.0
+          SERVER_SSL_ENABLED: false
+          
+          # ===== BASE DE DATOS =====
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/oauth2_dev
+          SPRING_DATASOURCE_USERNAME: oauth2_user
+          SPRING_DATASOURCE_PASSWORD: oauth2_dev_password
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_SHOW_SQL: true
+          
+          # ===== FLYWAY =====
+          SPRING_FLYWAY_ENABLED: true
+          SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+          SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+          
+          # ===== OAUTH2 - TOKENS =====
+          OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS: 86400
+          OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS: 1296000
+          JWT_SIGNING_KEY: dev-jwt-signing-key-for-ci-tests-123456
+          JWT_AUDIENCE: oauth2-client
+          ISSUER_URL: http://localhost:8080
+          
+          # ===== CLIENTE CINE-PLATFORM =====
+          CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
+          CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
+          
+          # ===== CLIENTE TRANSCRIBERAPP =====
+          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          
+          # ===== CLIENTE POR DEFECTO (si se necesita) =====
+          DEFAULT_CLIENT_ID: default-ci-client
+          DEFAULT_CLIENT_SECRET: default-ci-secret-789
+          
+          # ===== USUARIOS POR DEFECTO =====
+          DEFAULT_ADMIN_USERNAME: admin
+          DEFAULT_ADMIN_PASSWORD: admin
+          DEFAULT_USER_USERNAME: user
+          DEFAULT_USER_PASSWORD: user
+          
+          # ===== H2 (no se usa pero por si acaso) =====
+          SPRING_H2_CONSOLE_ENABLED: false
+          
+          # ===== LOGGING =====
+          LOGGING_LEVEL_ROOT: INFO
+          LOGGING_LEVEL_COM_OAUTH_REST: DEBUG
+          LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+          
+          # ===== ACTUATOR =====
+          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
 
       - name: Run tests with coverage
         run: mvn test
         env:
-          SPRING_PROFILES_ACTIVE: dev
+          # ===== CONFIGURACIÓN GENERAL =====
+          SERVER_PORT: 8080
+          SERVER_ADDRESS: 0.0.0.0
+          SERVER_SSL_ENABLED: false
+          
+          # ===== BASE DE DATOS =====
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/oauth2_dev
+          SPRING_DATASOURCE_USERNAME: oauth2_user
+          SPRING_DATASOURCE_PASSWORD: oauth2_dev_password
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_SHOW_SQL: true
+          
+          # ===== FLYWAY =====
+          SPRING_FLYWAY_ENABLED: true
+          SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+          SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+          
+          # ===== OAUTH2 - TOKENS =====
+          OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS: 86400
+          OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS: 1296000
+          JWT_SIGNING_KEY: dev-jwt-signing-key-for-ci-tests-123456
+          JWT_AUDIENCE: oauth2-client
+          ISSUER_URL: http://localhost:8080
+          
+          # ===== CLIENTE CINE-PLATFORM =====
+          CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
+          CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
+          
+          # ===== CLIENTE TRANSCRIBERAPP =====
+          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          
+          # ===== CLIENTE POR DEFECTO (si se necesita) =====
+          DEFAULT_CLIENT_ID: default-ci-client
+          DEFAULT_CLIENT_SECRET: default-ci-secret-789
+          
+          # ===== USUARIOS POR DEFECTO =====
+          DEFAULT_ADMIN_USERNAME: admin
+          DEFAULT_ADMIN_PASSWORD: admin
+          DEFAULT_USER_USERNAME: user
+          DEFAULT_USER_PASSWORD: user
+          
+          # ===== H2 (no se usa pero por si acaso) =====
+          SPRING_H2_CONSOLE_ENABLED: false
+          
+          # ===== LOGGING =====
+          LOGGING_LEVEL_ROOT: INFO
+          LOGGING_LEVEL_COM_OAUTH_REST: DEBUG
+          LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+          
+          # ===== ACTUATOR =====
+          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
 
       - name: Verify coverage
         run: mvn verify -DskipTests=false
         env:
-          SPRING_PROFILES_ACTIVE: dev
+          # ===== CONFIGURACIÓN GENERAL =====
+          SERVER_PORT: 8080
+          SERVER_ADDRESS: 0.0.0.0
+          SERVER_SSL_ENABLED: false
+          
+          # ===== BASE DE DATOS =====
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/oauth2_dev
+          SPRING_DATASOURCE_USERNAME: oauth2_user
+          SPRING_DATASOURCE_PASSWORD: oauth2_dev_password
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_SHOW_SQL: true
+          
+          # ===== FLYWAY =====
+          SPRING_FLYWAY_ENABLED: true
+          SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+          SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+          
+          # ===== OAUTH2 - TOKENS =====
+          OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS: 86400
+          OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS: 1296000
+          JWT_SIGNING_KEY: dev-jwt-signing-key-for-ci-tests-123456
+          JWT_AUDIENCE: oauth2-client
+          ISSUER_URL: http://localhost:8080
+          
+          # ===== CLIENTE CINE-PLATFORM =====
+          CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
+          CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
+          
+          # ===== CLIENTE TRANSCRIBERAPP =====
+          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          
+          # ===== CLIENTE POR DEFECTO (si se necesita) =====
+          DEFAULT_CLIENT_ID: default-ci-client
+          DEFAULT_CLIENT_SECRET: default-ci-secret-789
+          
+          # ===== USUARIOS POR DEFECTO =====
+          DEFAULT_ADMIN_USERNAME: admin
+          DEFAULT_ADMIN_PASSWORD: admin
+          DEFAULT_USER_USERNAME: user
+          DEFAULT_USER_PASSWORD: user
+          
+          # ===== H2 (no se usa pero por si acaso) =====
+          SPRING_H2_CONSOLE_ENABLED: false
+          
+          # ===== LOGGING =====
+          LOGGING_LEVEL_ROOT: INFO
+          LOGGING_LEVEL_COM_OAUTH_REST: DEBUG
+          LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+          
+          # ===== ACTUATOR =====
+          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
 
       - name: Build package
         run: mvn package -DskipTests
         env:
-          SPRING_PROFILES_ACTIVE: dev
+          # ===== CONFIGURACIÓN GENERAL =====
+          SERVER_PORT: 8080
+          SERVER_ADDRESS: 0.0.0.0
+          SERVER_SSL_ENABLED: false
+          
+          # ===== BASE DE DATOS =====
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/oauth2_dev
+          SPRING_DATASOURCE_USERNAME: oauth2_user
+          SPRING_DATASOURCE_PASSWORD: oauth2_dev_password
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_SHOW_SQL: true
+          
+          # ===== FLYWAY =====
+          SPRING_FLYWAY_ENABLED: true
+          SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+          SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+          
+          # ===== OAUTH2 - TOKENS =====
+          OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS: 86400
+          OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS: 1296000
+          JWT_SIGNING_KEY: dev-jwt-signing-key-for-ci-tests-123456
+          JWT_AUDIENCE: oauth2-client
+          ISSUER_URL: http://localhost:8080
+          
+          # ===== CLIENTE CINE-PLATFORM =====
+          CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
+          CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
+          
+          # ===== CLIENTE TRANSCRIBERAPP =====
+          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          
+          # ===== CLIENTE POR DEFECTO (si se necesita) =====
+          DEFAULT_CLIENT_ID: default-ci-client
+          DEFAULT_CLIENT_SECRET: default-ci-secret-789
+          
+          # ===== USUARIOS POR DEFECTO =====
+          DEFAULT_ADMIN_USERNAME: admin
+          DEFAULT_ADMIN_PASSWORD: admin
+          DEFAULT_USER_USERNAME: user
+          DEFAULT_USER_PASSWORD: user
+          
+          # ===== H2 (no se usa pero por si acaso) =====
+          SPRING_H2_CONSOLE_ENABLED: false
+          
+          # ===== LOGGING =====
+          LOGGING_LEVEL_ROOT: INFO
+          LOGGING_LEVEL_COM_OAUTH_REST: DEBUG
+          LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+          
+          # ===== ACTUATOR =====
+          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
 
       - name: Verify application starts
         run: |
-          # Start the application in the background
           java -jar target/oauth2server-0.0.1-SNAPSHOT.jar &
           APP_PID=$!
-          
-          # Wait for the application to start (max 60 seconds)
           for i in {1..60}; do
             if curl -s http://localhost:8080/login > /dev/null 2>&1; then
               echo "Application started successfully"
@@ -60,20 +287,46 @@ jobs:
             fi
             sleep 1
           done
-          
-          # Check if the application is running
           if curl -s http://localhost:8080/login > /dev/null 2>&1; then
             echo "Application is responding on port 8080"
           else
             echo "Application failed to respond"
             exit 1
           fi
-          
-          # Stop the application
           kill $APP_PID || true
         env:
-          SPRING_PROFILES_ACTIVE: dev
           SERVER_PORT: 8080
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/oauth2_dev
+          SPRING_DATASOURCE_USERNAME: oauth2_user
+          SPRING_DATASOURCE_PASSWORD: oauth2_dev_password
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+          SPRING_JPA_HIBERNATE_DDL_AUTO: update
+          SPRING_JPA_SHOW_SQL: true
+          SPRING_FLYWAY_ENABLED: true
+          SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+          SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+          OAUTH2_ACCESS_TOKEN_VALIDITY_SECONDS: 86400
+          OAUTH2_REFRESH_TOKEN_VALIDITY_SECONDS: 1296000
+          JWT_SIGNING_KEY: dev-jwt-signing-key-for-ci-tests-123456
+          JWT_AUDIENCE: oauth2-client
+          ISSUER_URL: http://localhost:8080
+          CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
+          CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
+          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          DEFAULT_CLIENT_ID: default-ci-client
+          DEFAULT_CLIENT_SECRET: default-ci-secret-789
+          DEFAULT_ADMIN_USERNAME: admin
+          DEFAULT_ADMIN_PASSWORD: admin
+          DEFAULT_USER_USERNAME: user
+          DEFAULT_USER_PASSWORD: user
+          SPRING_H2_CONSOLE_ENABLED: false
+          LOGGING_LEVEL_ROOT: INFO
+          LOGGING_LEVEL_COM_OAUTH_REST: DEBUG
+          LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+          MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+          MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
 
       - name: Upload test results
         if: always()

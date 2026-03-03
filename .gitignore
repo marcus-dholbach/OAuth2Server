@@ -8,6 +8,7 @@ target/
 
 application-secrets.properties
 .env
+*.log
 
 ### STS ###
 .apt_generated
@@ -19,37 +20,34 @@ application-secrets.properties
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
 
 ### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
-*.txt
-git
 
-### Data ###
-data/oauth2db.mv.db
-k8s/secrets.yaml
-k8s/tls-secret.yaml
+### k8s secrets - solo overlays, no bases ###
+k8s/**/overlays/**
+!k8s/**/overlays/example/
+k8s/**/overlays/prod/**
+k8s/**/overlays/dev/**
+k8s/**/overlays/staging/**
+k8s/**/secrets.yaml
+k8s/**/*-secrets.yaml
 
-# Flyway
-src/main/resources/db/migration/*
-src/main/resources/data.sql
-
-server.log
-
+### Certificados y archivos sensibles ###
 *.p12
 *.crt
 *.key
@@ -57,3 +55,35 @@ server.log
 *.pem
 *.cer
 *.pfx
+*.keystore
+*.truststore
+
+### Scripts de entorno ###
+entrypoint.sh
+*.bat
+*.cmd
+
+### Archivos temporales ###
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*.swo
+*~
+
+### Docker ###
+.dockerignore
+Dockerfile
+!Dockerfile.prod
+!Dockerfile.dev
+
+### Bases de datos y migraciones ###
+src/main/resources/db/migration/*
+!src/main/resources/db/migration/V1__init.sql
+src/main/resources/data.sql
+
+### Directorios de build ###
+dist/
+out/
+bin/
