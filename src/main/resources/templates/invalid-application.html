@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso no autorizado - OAuth2 Server</title>
+    <link rel="stylesheet" href="/css/login.css">
+    <style>
+        .warning-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .message-box {
+            background: #fef7e0;
+            border: 1px solid #f9a825;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .message-box h2 {
+            color: #f57f17;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.3px;
+        }
+        
+        .message-box p {
+            color: #5f6368;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .developer-info {
+            background: #e8f0fe;
+            border: 1px solid rgba(26, 115, 232, 0.2);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        
+        .developer-header {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            color: #1a73e8;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        .developer-header:hover {
+            background-color: rgba(26, 115, 232, 0.08);
+        }
+        
+        .developer-header:focus-visible {
+            outline: 2px solid #1a73e8;
+            outline-offset: 2px;
+        }
+        
+        .developer-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .developer-title::before {
+            content: "⚙️";
+        }
+        
+        .collapse-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .developer-header[aria-expanded="true"] .collapse-icon {
+            transform: rotate(180deg);
+        }
+        
+        .developer-content {
+            transition: max-height 0.3s ease-in-out;
+            overflow: hidden;
+            max-height: 0;
+            padding: 0 0.5rem;
+        }
+        
+        .developer-content[hidden] {
+            display: none;
+        }
+        
+        .developer-content:not([hidden]) {
+            max-height: 400px;
+            padding: 0.5rem 0.5rem 1rem 0.5rem;
+        }
+        
+        .developer-content p {
+            color: #5f6368;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+        
+        .code-example {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.75rem;
+            color: #37474f;
+            word-break: break-all;
+            border: 1px solid #e0e0e0;
+            margin-top: 0.5rem;
+        }
+        
+        .code-example .label {
+            color: #1a73e8;
+            font-weight: 500;
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #5f6368;
+            border: 1px solid #e0e0e0;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+            min-width: 150px;
+        }
+        
+        .btn-secondary:hover {
+            background: #e8e8e8;
+            color: #3c4043;
+            border-color: #d0d0d0;
+        }
+        
+        .actions {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .note {
+            color: #9e9e9e;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .help-text {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #f0f0f0;
+            color: #5f6368;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .help-text a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .info {
+            margin-top: 2rem;
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 480px) {
+            .message-box, .developer-info {
+                padding: 1rem;
+            }
+            
+            .code-example {
+                font-size: 0.7rem;
+            }
+            
+            .btn-secondary {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <span class="warning-icon">🔒</span>
+        
+        <h1>Acceso no autorizado</h1>
+        
+        <div class="message-box">
+            <h2>Esta página de inicio de sesión no es válida</h2>
+            <p>La página de login de OAuth2 Server solo puede ser utilizada desde una aplicación autorizada. No puedes acceder directamente a través del navegador.</p>
+        </div>
+        
+        <div class="developer-info">
+            <button class="developer-header" aria-expanded="false" aria-controls="developer-content">
+                <span class="developer-title">Información para desarrolladores</span>
+                <span class="collapse-icon">▼</span>
+            </button>
+            <div id="developer-content" class="developer-content" hidden>
+                <p>Para implementar el flujo OAuth2 correctamente, tu aplicación debe redirigir al usuario a esta URL con los parámetros correctos:</p>
+                <div class="code-example">
+                    <span class="label">redirect_uri=</span>https://tu-app.com/callback&client_id=tu-client-id&response_type=code&scope=openid profile email
+                </div>
+                <p style="margin-top: 0.75rem;">Asegúrate de que tu aplicación esté registrada en OAuth2 Server y que el <code>redirect_uri</code> coincida exactamente con el registrado.</p>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <p class="note">
+                Puedes cerrar esta pestaña cuando quieras.
+            </p>
+        </div>
+
+        <div class="help-text">
+            <p>
+                ¿Necesitas ayuda? 
+                <a th:href="'mailto:' + ${contactEmail} + '?subject=Problema%20con%20autenticaci%C3%B3n'">
+                    Contacta con el administrador
+                </a>
+            </p>
+        </div>
+        
+        <div class="info">
+            <span class="brand">Powered by</span>
+            <strong class="name"> · OAuth2Server</strong>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const developerHeader = document.querySelector('.developer-header');
+            const developerContent = document.getElementById('developer-content');
+            
+            if (developerHeader && developerContent) {
+                developerHeader.addEventListener('click', function() {
+                    const isExpanded = developerHeader.getAttribute('aria-expanded') === 'true';
+                    
+                    // Toggle estado
+                    developerHeader.setAttribute('aria-expanded', !isExpanded);
+                    
+                    if (isExpanded) {
+                        developerContent.hidden = true;
+                    } else {
+                        developerContent.hidden = false;
+                    }
+                });
+                
+                // Soporte para teclado (Enter y Espacio)
+                developerHeader.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        developerHeader.click();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

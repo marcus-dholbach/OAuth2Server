@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
       - name: generate-keystore
-        image: felixmurcia/oauth2server:v20260304-1211
+        image: felixmurcia/oauth2server:v20260304-2119
         command:
           - /bin/sh
           - -c
@@ -58,7 +58,7 @@ spec:
 
       containers:
       - name: oauth2-server
-        image: felixmurcia/oauth2server:v20260304-1211
+        image: felixmurcia/oauth2server:v20260304-2119
         command:
           - java
           - -jar
@@ -115,8 +115,6 @@ spec:
             secretKeyRef:
               name: oauth2-secrets
               key: REFRESH_TOKEN_VALIDITY
-
-        # ===== CONFIGURACIÓN EXISTENTE (minúsculas - compatibilidad) =====
         - name: JWT_SIGNING_KEY
           valueFrom:
             secretKeyRef:
@@ -197,6 +195,11 @@ spec:
             secretKeyRef:
               name: oauth2-secrets
               key: SSL_KEY_FILE
+        - name: CONTACT_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-secrets
+              key: CONTACT_EMAIL
         - name: SSL_KEY_STORE
           value: "/keystore/keystore.p12"
         - name: KEYSTORE_PASSWORD

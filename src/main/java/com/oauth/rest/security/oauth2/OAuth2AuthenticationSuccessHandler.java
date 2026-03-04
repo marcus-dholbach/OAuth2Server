@@ -129,14 +129,17 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 url = url.substring(0, url.length() - 1);
             }
 
-            log.info("[OAuth2AuthenticationSuccessHandler] Redirecting to: {}", url);
+            log.info("[OAuth2AuthenticationSuccessHandler] Redirecting to OAuth2 authorize: {}", url);
             response.sendRedirect(url);
             return;
         }
 
-        log.warn(
-                "[OAuth2AuthenticationSuccessHandler] No se encontraron parámetros OAuth2, redirigiendo a /");
-        response.sendRedirect("/");
+        // No hay parámetros OAuth2 - el usuario accedió directamente al login sin
+        // redirect_uri
+        // Redirigir a la página de información en lugar de mostrar un 404
+        log.warn("[OAuth2AuthenticationSuccessHandler] Acceso directo al login sin redirect_uri. "
+                + "Usuario: {}. Redirigiendo a /invalid-application", authentication.getName());
+        response.sendRedirect("/invalid-application");
     }
 
     private String getCookieValue(HttpServletRequest request, String name) {

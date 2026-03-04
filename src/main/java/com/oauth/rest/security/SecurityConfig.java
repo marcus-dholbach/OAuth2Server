@@ -110,7 +110,8 @@ public class SecurityConfig {
                 http.securityMatcher(
                                 "/css/**", "/js/**", "/images/**", "/webjars/**", "/h2-console/**",
                                 "/favicon.ico",
-                                "/error")
+                                "/error",
+                                "/invalid-application")
                                 .authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
                                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                                 .csrf(csrf -> csrf.disable());

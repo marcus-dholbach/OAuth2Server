@@ -4,9 +4,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 public class LoginController {
+
+    @Value("${app.contact.email:admin@localhost}")
+    private String contactEmail;
 
     @GetMapping("/login")
     public String login(
@@ -28,5 +32,15 @@ public class LoginController {
         }
 
         return "login";
+    }
+
+    /**
+     * Página mostrada cuando el usuario intenta acceder directamente al login
+     * sin un redirect_uri válido (flujo OAuth2).
+     */
+    @GetMapping("/invalid-application")
+    public String invalidApplication(Model model) {
+        model.addAttribute("contactEmail", contactEmail);
+        return "invalid-application";
     }
 }
