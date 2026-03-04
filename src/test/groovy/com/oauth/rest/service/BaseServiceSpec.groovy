@@ -1,5 +1,6 @@
 package com.oauth.rest.service
 
+import com.oauth.rest.model.Role
 import com.oauth.rest.model.UserEntity
 import com.oauth.rest.repository.UserEntityRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -11,9 +12,10 @@ class BaseServiceSpec extends Specification {
         given:
         UserEntityRepository repository = Mock(UserEntityRepository)
         PasswordEncoder passwordEncoder = Mock(PasswordEncoder)
+        RoleService roleService = Mock(RoleService)
         
         when:
-        UserEntityService service = new UserEntityService(repository, passwordEncoder)
+        UserEntityService service = new UserEntityService(repository, passwordEncoder, roleService)
 
         then:
         service != null
@@ -23,10 +25,12 @@ class BaseServiceSpec extends Specification {
         given:
         UserEntityRepository repository = Mock(UserEntityRepository)
         PasswordEncoder passwordEncoder = Mock(PasswordEncoder)
-        UserEntityService service = new UserEntityService(repository, passwordEncoder)
+        RoleService roleService = Mock(RoleService)
+        UserEntityService service = new UserEntityService(repository, passwordEncoder, roleService)
         
         UserEntity user = new UserEntity()
         user.setUsername('test')
+        user.setEmail('test@example.com')
         user.setPassword('encoded')
 
         when:
@@ -41,30 +45,34 @@ class BaseServiceSpec extends Specification {
         given:
         UserEntityRepository repository = Mock(UserEntityRepository)
         PasswordEncoder passwordEncoder = Mock(PasswordEncoder)
-        UserEntityService service = new UserEntityService(repository, passwordEncoder)
+        RoleService roleService = Mock(RoleService)
+        UserEntityService service = new UserEntityService(repository, passwordEncoder, roleService)
         
+        Long id = 1L
         UserEntity user = new UserEntity()
-        user.setId(1L)
+        user.setId(id)
         user.setUsername('test')
+        user.setEmail('test@example.com')
 
         when:
-        repository.findById(1L) >> Optional.of(user)
-        Optional<UserEntity> result = service.findById(1L)
+        repository.findById(id) >> Optional.of(user)
+        Optional<UserEntity> result = service.findById(id)
 
         then:
         result.isPresent()
-        result.get().getId() == 1L
+        result.get().getUsername() == 'test'
     }
 
     def 'UserEntityService findAll method works'() {
         given:
         UserEntityRepository repository = Mock(UserEntityRepository)
         PasswordEncoder passwordEncoder = Mock(PasswordEncoder)
-        UserEntityService service = new UserEntityService(repository, passwordEncoder)
+        RoleService roleService = Mock(RoleService)
+        UserEntityService service = new UserEntityService(repository, passwordEncoder, roleService)
         
         List<UserEntity> users = [
-            new UserEntity(id: 1L, username: 'user1'),
-            new UserEntity(id: 2L, username: 'user2')
+            new UserEntity(username: 'user1', email: 'user1@example.com'),
+            new UserEntity(username: 'user2', email: 'user2@example.com')
         ]
 
         when:
@@ -79,10 +87,12 @@ class BaseServiceSpec extends Specification {
         given:
         UserEntityRepository repository = Mock(UserEntityRepository)
         PasswordEncoder passwordEncoder = Mock(PasswordEncoder)
-        UserEntityService service = new UserEntityService(repository, passwordEncoder)
+        RoleService roleService = Mock(RoleService)
+        UserEntityService service = new UserEntityService(repository, passwordEncoder, roleService)
         
         UserEntity user = new UserEntity()
-        user.setId(1L)
+        user.setUsername('test')
+        user.setEmail('test@example.com')
 
         when:
         service.delete(user)

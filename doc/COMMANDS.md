@@ -307,7 +307,7 @@ kubectl cp ./oauth2db.mv.db auth/<POD_NAME>:/app/data/oauth2db.mv.db
 ```sql
 UPDATE usuarios
 SET password = '$2b$12$t3XDd8U5098eeYodNTlJp.u6Rze/P8zdjmEZ.SklfEl6lFvMyUCtS'
-WHERE username = 'juanaco';
+WHERE username = 'dummy';
 ```
 
 ---

@@ -2,21 +2,22 @@ package com.oauth.rest.model;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -27,47 +28,51 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Entity
 @Table(name = "usuarios")
 @EntityListeners(AuditingEntityListener.class)
-public class UserEntity implements UserDetails {
+public class UserEntity implements UserDetails, java.io.Serializable {
 
     private static final long serialVersionUID = 6189678452627071360L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "usuarios_seq")
-    @SequenceGenerator(name = "usuarios_seq", sequenceName = "usuarios_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
 
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "full_name")
     private String fullName;
 
-    private String email;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @Enumerated(EnumType.STRING)
-    private Set<UserRole> roles;
+    @Column(nullable = false)
+    private Boolean enabled = true;
 
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "last_password_change_at", nullable = false)
     private LocalDateTime lastPasswordChangeAt = LocalDateTime.now();
 
-    @Column(name = "app")
-    private String application;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "usuario_rol", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+            "usuario_id", "rol_id" }))
+    private Set<Role> roles = new HashSet<>();
 
     public UserEntity() {
     }
 
-    public UserEntity(Long id, String username, String password, String fullName, String email,
-            Set<UserRole> roles, LocalDateTime createdAt, LocalDateTime lastPasswordChangeAt) {
-        this.id = id;
+    public UserEntity(String username, String email, String password, String fullName,
+            Boolean enabled, Set<Role> roles, LocalDateTime createdAt, LocalDateTime lastPasswordChangeAt) {
         this.username = username;
+        this.email = email;
         this.password = password;
         this.fullName = fullName;
-        this.email = email;
+        this.enabled = enabled;
         this.roles = roles;
         this.createdAt = createdAt;
         this.lastPasswordChangeAt = lastPasswordChangeAt;
@@ -92,6 +97,14 @@ public class UserEntity implements UserDetails {
         this.username = username;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     @Override
     public String getPassword() {
         return password;
@@ -109,19 +122,19 @@ public class UserEntity implements UserDetails {
         this.fullName = fullName;
     }
 
-    public String getEmail() {
-        return email;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public Set<UserRole> getRoles() {
+    public Set<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<UserRole> roles) {
+    public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
 
@@ -142,7 +155,7 @@ public class UserEntity implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
     }
 
@@ -163,14 +176,6 @@ public class UserEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
-    }
-
-    public String getApplication() {
-        return application;
-    }
-
-    public void setApplication(String application) {
-        this.application = application;
+        return enabled;
     }
 }

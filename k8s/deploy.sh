@@ -1,30 +1,38 @@
 #!/bin/bash
 
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
 set -e
 
 # ===== CONFIGURACIÓN =====
 IMAGE_NAME="felixmurcia/oauth2server"
 NAMESPACE="auth"
 DEPLOYMENT="oauth2-server"
-CONTAINER_NAME="oauth2-server"
+ENVIRONMENT=${1:-prod}
 
-# ===== COMPILACIÓN Y TESTS =====
-echo "======================================"
-echo "  🔨 Compilando aplicación y ejecutando tests"
-echo "======================================"
-
-# Ejecutar mvn clean install (esto compila y ejecuta los tests)
-mvn clean install
-
-# Verificar que la compilación fue exitosa
-if [ $? -ne 0 ]; then
-    echo "❌ Error en la compilación o los tests. Abortando despliegue."
+if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "prod" ]]; then
+    echo "❌ Entorno no válido. Usa: dev o prod"
     exit 1
 fi
 
-echo "✅ Compilación y tests exitosos"
+echo "======================================"
+echo "  🌍 Desplegando en entorno: $ENVIRONMENT"
+echo "======================================"
 
-# ===== GENERAR TAG AUTOMÁTICO =====
+# ===== COMPILACIÓN Y TESTS =====
+echo "======================================"
+echo "  🔨 Compilando aplicación"
+echo "======================================"
+
+mvn clean install
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error en la compilación"
+    exit 1
+fi
+
+# ===== IMAGEN DOCKER =====
 TAG=$(date +"v%Y%m%d-%H%M")
 FULL_IMAGE="$IMAGE_NAME:$TAG"
 
@@ -33,47 +41,42 @@ echo "  🚀 Construyendo imagen: $FULL_IMAGE"
 echo "======================================"
 
 docker build -t $FULL_IMAGE .
-
-echo "======================================"
-echo "  📤 Subiendo imagen a Docker Hub"
-echo "======================================"
-
 docker push $FULL_IMAGE
 
-echo "======================================"
-echo "  📝 Actualizando deployment.yaml con la nueva imagen"
-echo "======================================"
+# Actualizar imagen en base
+sed -i "s|image: .*|image: $FULL_IMAGE|" k8s/base/deployment.yaml
 
-# Sustituye la línea de imagen en TU YAML
-sed -i "s|image: .*|image: $FULL_IMAGE|" k8s/deployment.yaml
-
+# ===== DESPLEGAR POSTGRES PRIMERO =====
 echo "======================================"
-echo "  📦 Aplicando manifests"
+echo "  🗄️  Desplegando PostgreSQL"
 echo "======================================"
 
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/secrets.yaml
-kubectl apply -f k8s/pvc.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
-kubectl apply -f k8s/tls-secret.yaml
+kubectl apply -k k8s/postgres/overlays/$ENVIRONMENT
 
+# Esperar a que PostgreSQL esté listo
+echo "⏳ Esperando a que PostgreSQL esté listo..."
+kubectl wait --for=condition=ready pod -l app=postgres -n $NAMESPACE --timeout=120s
 
+# ===== DESPLEGAR APLICACIÓN =====
 echo "======================================"
-echo "  🔄 Reiniciando pod"
+echo "  🚀 Desplegando aplicación"
 echo "======================================"
 
-kubectl delete pod -n $NAMESPACE -l app=$DEPLOYMENT --ignore-not-found=true
+kubectl apply -k k8s/overlays/$ENVIRONMENT
+
+# ===== REINICIAR Y VERIFICAR =====
+echo "======================================"
+echo "  🔄 Reiniciando deployment"
+echo "======================================"
+
+kubectl rollout restart deployment/$DEPLOYMENT -n $NAMESPACE
+kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE --timeout=120s
 
 echo "======================================"
-echo "  🧹 Eliminando imágenes antiguas de oauth2server"
+echo "  🧹 Limpiando imágenes antiguas de oauth2server"
 echo "======================================"
 
-IMAGES_TO_DELETE=$(docker images $IMAGE_NAME --format "{{.Repository}}:{{.Tag}} {{.CreatedAt}}" \
-  | sort -k2 -r \
-  | tail -n +2 \
-  | awk '{print $1}')
+IMAGES_TO_DELETE=$(docker images $IMAGE_NAME --format "{{.Repository}}:{{.Tag}} {{.CreatedAt}}" | sort -k2 -r | tail -n +2 | awk '{print $1}')
 
 for IMG in $IMAGES_TO_DELETE; do
   echo "🗑️  Eliminando imagen antigua: $IMG"
@@ -89,7 +92,23 @@ docker container prune -f
 docker image prune -a --filter "until=720h" -f
 
 echo "======================================"
-echo "  📜 Logs del nuevo pod"
+echo "  📊 Estado de los pods"
+echo "======================================"
+kubectl get pods -n $NAMESPACE
+
+echo "======================================"
+echo "  📜 Logs del nuevo pod (Ctrl+C para salir)"
 echo "======================================"
 
-kubectl logs -n $NAMESPACE -l app=$DEPLOYMENT -f
+# Mostrar logs del pod más reciente
+POD_NAME=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOYMENT -o jsonpath="{.items[0].metadata.name}" 2>/dev/null)
+if [ ! -z "$POD_NAME" ]; then
+    echo "📝 Mostrando logs de: $POD_NAME"
+    kubectl logs -n $NAMESPACE $POD_NAME -f
+else
+    echo "❌ No se encontró ningún pod para mostrar logs"
+fi
+
+echo "======================================"
+echo "  ✅ Despliegue completado"
+echo "======================================"

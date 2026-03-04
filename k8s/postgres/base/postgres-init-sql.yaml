@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-sql
+  namespace: auth
+data:
+  init.sql: |
+    -- Scripts de inicialización para PostgreSQL (opcional)
+    -- Como Flyway gestiona todo, este archivo puede estar vacío
+    -- o contener configuraciones específicas del cluster
+    
+    -- Ejemplo: crear extensiones necesarias
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";

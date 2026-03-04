@@ -168,7 +168,7 @@ public class OAuth2AuthorizationServer {
                                         .scope("read")
                                         .scope("write")
                                         .clientSettings(ClientSettings.builder()
-                                                        .requireAuthorizationConsent(true)
+                                                        .requireAuthorizationConsent(false)
                                                         .requireProofKey(false)
                                                         .build())
                                         .tokenSettings(TokenSettings.builder()

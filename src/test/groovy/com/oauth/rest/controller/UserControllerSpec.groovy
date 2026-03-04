@@ -4,8 +4,8 @@ import com.oauth.rest.dto.CreateUserDto
 import com.oauth.rest.dto.GetUserDto
 import com.oauth.rest.exception.UserPasswordException
 import com.oauth.rest.mapper.UserDtoMapper
+import com.oauth.rest.model.Role
 import com.oauth.rest.model.UserEntity
-import com.oauth.rest.model.UserRole
 import com.oauth.rest.service.UserEntityService
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.web.server.ResponseStatusException
@@ -37,7 +37,7 @@ class UserControllerSpec extends Specification {
         user.setPassword('hashedPassword')
         user.setFullName(dto.getFullName())
         user.setEmail(dto.getEmail())
-        user.setRoles(Set.of(UserRole.USER))
+        user.setRoles(Set.of(new Role('ROLE_USER', 'Usuario estándar')))
 
         when:
         GetUserDto result = userController.nuevoUsuario(dto)
@@ -81,12 +81,11 @@ class UserControllerSpec extends Specification {
     def 'me returns GetUserDto from authenticated user'() {
         given:
         UserEntity user = new UserEntity()
-        user.setId(1L)
         user.setUsername('admin')
+        user.setEmail('admin@example.com')
         user.setPassword('hashedPassword')
         user.setFullName('Admin User')
-        user.setEmail('admin@example.com')
-        user.setRoles(Set.of(UserRole.ADMIN))
+        user.setRoles(Set.of(new Role('ROLE_ADMIN', 'Administrador')))
 
         when:
         GetUserDto result = userController.me(user)

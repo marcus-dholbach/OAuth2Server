@@ -9,20 +9,18 @@ class UserEntitySpec extends Specification {
         UserEntity user = new UserEntity()
 
         when:
-        user.setId(1L)
         user.setUsername('testuser')
+        user.setEmail('test@example.com')
         user.setPassword('hashedPassword')
         user.setFullName('Test User')
-        user.setEmail('test@example.com')
-        user.setRoles(Set.of(UserRole.USER))
+        user.setRoles(Set.of(new Role('ROLE_USER', 'Usuario estándar')))
 
         then:
-        user.getId() == 1L
         user.getUsername() == 'testuser'
+        user.getEmail() == 'test@example.com'
         user.getPassword() == 'hashedPassword'
         user.getFullName() == 'Test User'
-        user.getEmail() == 'test@example.com'
-        user.getRoles() == Set.of(UserRole.USER)
+        user.getRoles().size() == 1
     }
 
     def 'UserEntity has default constructor'() {
@@ -30,10 +28,21 @@ class UserEntitySpec extends Specification {
         new UserEntity() != null
     }
 
-    def 'UserRole enum has correct values'() {
+    def 'UserEntity implements UserDetails'() {
+        given:
+        UserEntity user = new UserEntity()
+        user.setUsername('testuser')
+        user.setEmail('test@example.com')
+        user.setPassword('password')
+        user.setEnabled(true)
+        user.setRoles(Set.of(new Role('ROLE_USER', 'Usuario estándar')))
+
         expect:
-        UserRole.values().length == 2
-        UserRole.ADMIN.name() == 'ADMIN'
-        UserRole.USER.name() == 'USER'
+        user instanceof org.springframework.security.core.userdetails.UserDetails
+        user.getUsername() == 'testuser'
+        user.isEnabled() == true
+        user.isAccountNonExpired() == true
+        user.isAccountNonLocked() == true
+        user.isCredentialsNonExpired() == true
     }
 }
