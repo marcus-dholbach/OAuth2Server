@@ -288,6 +288,12 @@ mvn verify
 - Comprueba las credenciales en `application-dev.properties`
 
 ---
+## Documentación extendida
+- [COMANDOS](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/COMMANDS.md)
+- [ENDPOINTS](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/ENDPOINTS.md)
+- [MANUAL](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/MANUAL.md)
+- [REGISTRAR APLICACION](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/REGSITRAR_NUEVA_APLICACION.md)
+---
 
 ## ℹ️ Notas
 
