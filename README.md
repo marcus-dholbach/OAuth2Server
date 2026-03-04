@@ -292,7 +292,7 @@ mvn verify
 - [COMANDOS](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/COMMANDS.md)
 - [ENDPOINTS](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/ENDPOINTS.md)
 - [MANUAL](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/MANUAL.md)
-- [REGISTRAR APLICACION](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/REGSITRAR_NUEVA_APLICACION.md)
+- [REGISTRAR APLICACIÓN](https://github.com/FelixMarin/OAuth2Server/blob/main/doc/REGSITRAR_NUEVA_APLICACION.md)
 ---
 
 ## ℹ️ Notas
