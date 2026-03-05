@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 @Controller
 public class LoginController {
 
-    @Value("${app.contact.email}")
+    @Value("${app.contact.email:admin@localhost}")
     private String contactEmail;
 
     @GetMapping("/login")

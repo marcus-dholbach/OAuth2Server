@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
       - name: generate-keystore
-        image: felixmurcia/oauth2server:v20260304-1627
+        image: felixmurcia/oauth2server:v20260304-2119
         command:
           - /bin/sh
           - -c
@@ -58,7 +58,7 @@ spec:
 
       containers:
       - name: oauth2-server
-        image: felixmurcia/oauth2server:v20260304-1627
+        image: felixmurcia/oauth2server:v20260304-2119
         command:
           - java
           - -jar
