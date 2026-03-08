@@ -24,7 +24,7 @@
         <div th:if="${logout}" class="logout" th:text="${logout}"></div>
 
         <form th:action="@{/login}" method="post">
-            <input type="hidden" id="client_id" name="client_id" value="cine-platform" />
+            <input type="hidden" id="client_id" name="client_id" th:value="${clientId}" />
 
             <div class="form-group">
                 <label for="username">Usuario</label>

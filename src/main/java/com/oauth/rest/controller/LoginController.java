@@ -17,6 +17,7 @@ public class LoginController {
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "logout", required = false) String logout,
             @RequestParam(value = "registered", required = false) String registered,
+            @RequestParam(value = "client_id", required = false) String clientId,
             Model model) {
 
         if (error != null) {
@@ -30,6 +31,9 @@ public class LoginController {
         if (registered != null) {
             model.addAttribute("registered", "Usuario registrado correctamente");
         }
+
+        // Pasar client_id al modelo (puede ser nulo si no viene en la URL)
+        model.addAttribute("clientId", clientId);
 
         return "login";
     }

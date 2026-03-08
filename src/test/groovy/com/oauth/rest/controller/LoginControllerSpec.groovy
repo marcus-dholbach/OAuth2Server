@@ -17,11 +17,11 @@ class LoginControllerSpec extends Specification {
         Model model = Mock(Model)
 
         when:
-        String viewName = loginController.login(null, null, null, model)
+        String viewName = loginController.login(null, null, null, null, model)
 
         then:
         viewName == "login"
-        0 * model._
+        1 * model.addAttribute("clientId", null)
     }
 
     def "GET /login with error parameter adds error to model"() {
@@ -29,7 +29,7 @@ class LoginControllerSpec extends Specification {
         Model model = Mock(Model)
 
         when:
-        String viewName = loginController.login("error", null, null, model)
+        String viewName = loginController.login("error", null, null, null, model)
 
         then:
         viewName == "login"
@@ -41,7 +41,7 @@ class LoginControllerSpec extends Specification {
         Model model = Mock(Model)
 
         when:
-        String viewName = loginController.login(null, "logout", null, model)
+        String viewName = loginController.login(null, "logout", null, null, model)
 
         then:
         viewName == "login"
@@ -53,7 +53,7 @@ class LoginControllerSpec extends Specification {
         Model model = Mock(Model)
 
         when:
-        String viewName = loginController.login(null, null, "registered", model)
+        String viewName = loginController.login(null, null, "registered", null, model)
 
         then:
         viewName == "login"
