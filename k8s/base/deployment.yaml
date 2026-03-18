@@ -175,16 +175,16 @@ spec:
             secretKeyRef:
               name: oauth2-secrets
               key: CINE_PLATFORM_REDIRECT_URI
-        - name: TRANSCRIBEAPP_SECRET
+        - name: TRANSCRIBERAPP_SECRET
           valueFrom:
             secretKeyRef:
               name: oauth2-secrets
-              key: TRANSCRIBEAPP_SECRET
-        - name: TRANSCRIBEAPP_REDIRECT_URI
+              key: TRANSCRIBERAPP_SECRET
+        - name: TRANSCRIBERAPP_REDIRECT_URI
           valueFrom:
             secretKeyRef:
               name: oauth2-secrets
-              key: TRANSCRIBEAPP_REDIRECT_URI
+              key: TRANSCRIBERAPP_REDIRECT_URI
         - name: SSL_CERT_FILE
           valueFrom:
             secretKeyRef:

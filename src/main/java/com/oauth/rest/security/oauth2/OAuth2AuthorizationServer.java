@@ -49,14 +49,20 @@ public class OAuth2AuthorizationServer {
     public RegisteredClientRepository registeredClientRepository(PasswordEncoder passwordEncoder) {
         List<RegisteredClient> clients = new ArrayList<>();
         
-        // Cliente cine-platform
-        addClientIfConfigured(clients, passwordEncoder, "CINE_PLATFORM");
-        
-        // Cliente transcriberapp
-        addClientIfConfigured(clients, passwordEncoder, "TRANSCRIBERAPP");
+        // Obtener los prefijos de clientes desde variable de entorno
+        String clientsConfig = System.getenv("OAUTH2_CLIENTS");
+        if (clientsConfig != null && !clientsConfig.isBlank()) {
+            String[] prefixes = clientsConfig.split(",");
+            for (String prefix : prefixes) {
+                String trimmedPrefix = prefix.trim();
+                if (!trimmedPrefix.isEmpty()) {
+                    addClientIfConfigured(clients, passwordEncoder, trimmedPrefix);
+                }
+            }
+        }
         
         if (clients.isEmpty()) {
-            log.error("No OAuth2 clients configured. Set environment variables: CINE_PLATFORM_SECRET and CINE_PLATFORM_REDIRECT_URI");
+            log.error("No OAuth2 clients configured. Set environment variable OAUTH2_CLIENTS with comma-separated client prefixes (e.g., CINE_PLATFORM,TRANSCRIBERAPP)");
             throw new IllegalStateException("No OAuth2 clients configured");
         }
         

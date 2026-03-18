@@ -38,21 +38,22 @@ services:
       retries: 3
       start_period: 40s        
     build: .
-    image: felixmurcia/oauth2server:dev
+    image: felixmurcia/oauth2server:latest
     container_name: oauth2server
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     environment:
       # Perfil activo - SIEMPRE dev en local
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: prod
 
       # ===========================================
-      # OAuth2 Clients (usando variables SIN sufijo)
+      # OAuth2 Clients
       # ===========================================
+      OAUTH2_CLIENTS: ${OAUTH2_CLIENTS:-CINE_PLATFORM,TRANSCRIBERAPP}
       CINE_PLATFORM_SECRET: ${CINE_PLATFORM_SECRET:-cine-platform}
       CINE_PLATFORM_REDIRECT_URI: ${CINE_PLATFORM_REDIRECT_URI:-http://localhost:5000/oauth/callback}
-      TRANSCRIBEAPP_SECRET: ${TRANSCRIBEAPP_SECRET:-transcriberapp}
-      TRANSCRIBEAPP_REDIRECT_URI: ${TRANSCRIBEAPP_REDIRECT_URI:-http://localhost:9000/oauth/callback}
+      TRANSCRIBERAPP_SECRET: ${TRANSCRIBERAPP_SECRET:-transcriberapp}
+      TRANSCRIBERAPP_REDIRECT_URI: ${TRANSCRIBERAPP_REDIRECT_URI:-http://localhost:9000/oauth/callback}
       
       # ===========================================
       # Database - SOLO desarrollo
@@ -110,7 +111,7 @@ services:
       SSL_KEY_ALIAS: ""
 
     env_file:
-      - .env.dev
+      - .env
     volumes:
       - ./logs:/app/logs
     command: ["/app/run-dev.sh"]

@@ -70,8 +70,8 @@ jobs:
           CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
           
           # ===== CLIENTE TRANSCRIBERAPP =====
-          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
-          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          TRANSCRIBERAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBERAPP_REDIRECT_URI: http://localhost:3001/callback
           
           # ===== CLIENTE POR DEFECTO (si se necesita) =====
           DEFAULT_CLIENT_ID: default-ci-client
@@ -129,8 +129,8 @@ jobs:
           CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
           
           # ===== CLIENTE TRANSCRIBERAPP =====
-          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
-          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          TRANSCRIBERAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBERAPP_REDIRECT_URI: http://localhost:3001/callback
           
           # ===== CLIENTE POR DEFECTO (si se necesita) =====
           DEFAULT_CLIENT_ID: default-ci-client
@@ -188,8 +188,8 @@ jobs:
           CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
           
           # ===== CLIENTE TRANSCRIBERAPP =====
-          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
-          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          TRANSCRIBERAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBERAPP_REDIRECT_URI: http://localhost:3001/callback
           
           # ===== CLIENTE POR DEFECTO (si se necesita) =====
           DEFAULT_CLIENT_ID: default-ci-client
@@ -247,8 +247,8 @@ jobs:
           CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
           
           # ===== CLIENTE TRANSCRIBERAPP =====
-          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
-          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          TRANSCRIBERAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBERAPP_REDIRECT_URI: http://localhost:3001/callback
           
           # ===== CLIENTE POR DEFECTO (si se necesita) =====
           DEFAULT_CLIENT_ID: default-ci-client
@@ -313,8 +313,8 @@ jobs:
           ISSUER_URL: http://localhost:8080
           CINE_PLATFORM_SECRET: cine-platform-ci-secret-123
           CINE_PLATFORM_REDIRECT_URI: http://localhost:3000/callback
-          TRANSCRIBEAPP_SECRET: transcriberapp-ci-secret-456
-          TRANSCRIBEAPP_REDIRECT_URI: http://localhost:3001/callback
+          TRANSCRIBERAPP_SECRET: transcriberapp-ci-secret-456
+          TRANSCRIBERAPP_REDIRECT_URI: http://localhost:3001/callback
           DEFAULT_CLIENT_ID: default-ci-client
           DEFAULT_CLIENT_SECRET: default-ci-secret-789
           DEFAULT_ADMIN_USERNAME: admin
