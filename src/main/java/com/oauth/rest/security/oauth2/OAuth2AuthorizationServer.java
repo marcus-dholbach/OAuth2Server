@@ -53,7 +53,7 @@ public class OAuth2AuthorizationServer {
         addClientIfConfigured(clients, passwordEncoder, "CINE_PLATFORM");
         
         // Cliente transcriberapp
-        addClientIfConfigured(clients, passwordEncoder, "TRANSCRIBEAPP");
+        addClientIfConfigured(clients, passwordEncoder, "TRANSCRIBERAPP");
         
         if (clients.isEmpty()) {
             log.error("No OAuth2 clients configured. Set environment variables: CINE_PLATFORM_SECRET and CINE_PLATFORM_REDIRECT_URI");
