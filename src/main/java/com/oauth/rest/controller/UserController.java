@@ -1,12 +1,13 @@
 package com.oauth.rest.controller;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.oauth.rest.dto.CreateUserDto;
 import com.oauth.rest.dto.GetUserDto;
 import com.oauth.rest.mapper.UserDtoMapper;
@@ -27,9 +28,10 @@ public class UserController {
     }
 
     @PostMapping
-    public GetUserDto nuevoUsuario(@RequestBody CreateUserDto newUser) {
-        UserEntity created = userEntityService.nuevoUsuario(newUser);
-        return userDtoMapper.toGetUserDto(created);
+    public CompletableFuture<GetUserDto> nuevoUsuario(@RequestBody CreateUserDto newUser) {
+        return userEntityService.nuevoUsuario(newUser)
+        .thenApply(userDtoMapper::toGetUserDto)
+        .exceptionally(ex -> { throw (RuntimeException) ex.getCause(); });
     }
 
     @GetMapping("/me")

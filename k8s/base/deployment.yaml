@@ -72,7 +72,7 @@ spec:
         - name: SERVER_ADDRESS
           value: "0.0.0.0"
         - name: SERVER_PORT
-          value: "8443"
+          value: "8080"
         - name: SERVER_SSL_ENABLED
           value: "true"
         - name: SERVER_SSL_KEY_STORE
@@ -214,7 +214,7 @@ spec:
               key: keystore-password
               
         ports:
-        - containerPort: 8443
+        - containerPort: 8080
           name: https
         volumeMounts:
         - name: oauth2-data

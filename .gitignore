@@ -89,3 +89,4 @@ out/
 bin/
 
 application-prod.properties
+backup-sensitive.sh

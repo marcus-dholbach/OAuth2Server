@@ -6,9 +6,11 @@ import com.oauth.rest.model.Role
 import com.oauth.rest.model.UserEntity
 import com.oauth.rest.repository.UserEntityRepository
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.server.ResponseStatusException
 import spock.lang.Specification
+import java.util.concurrent.ExecutionException
 
 class UserEntityServiceSpec extends Specification {
 
@@ -74,17 +76,41 @@ class UserEntityServiceSpec extends Specification {
 
     def "nuevoUsuario throws exception when passwords do not match"() {
         given:
-        CreateUserDto dto = new CreateUserDto()
-        dto.setUsername("testuser")
-        dto.setEmail("test@example.com")
-        dto.setPassword("Password123")
-        dto.setPassword2("DifferentPass123")
+        CreateUserDto dto = new CreateUserDto(
+            username: "testuser",
+            password: "Password123",
+            password2: "DifferentPass123"
+        )
 
         when:
-        userEntityService.nuevoUsuario(dto)
+        def future = userEntityService.nuevoUsuario(dto)
+        future.get()
 
         then:
-        thrown(UserPasswordException)
+        def ex = thrown(ExecutionException)
+        ex.cause instanceof UserPasswordException
+    }
+
+    def "nuevoUsuario throws exception when username already exists"() {
+        given:
+        CreateUserDto dto = new CreateUserDto(
+            username: "existinguser",
+            password: "ValidPass123",
+            password2: "ValidPass123"
+        )
+
+        when:
+        def future = userEntityService.nuevoUsuario(dto)
+        future.get()
+
+        then:
+        1 * passwordEncoder.encode(_) >> "hashedPassword"
+        1 * roleService.findOrCreateRole("ROLE_USER", _) >> new Role("ROLE_USER", "Usuario estándar")
+        1 * userEntityRepository.save(_) >> { throw new DataIntegrityViolationException("Duplicate key") }
+        
+        def ex = thrown(ExecutionException)
+        ex.cause instanceof ResponseStatusException
+        ((ResponseStatusException) ex.cause).getStatusCode() == HttpStatus.BAD_REQUEST
     }
 
     def "nuevoUsuario successfully creates user with valid credentials"() {
@@ -99,37 +125,47 @@ class UserEntityServiceSpec extends Specification {
         Role userRole = new Role('ROLE_USER', 'Usuario estándar')
         
         UserEntity savedUser = new UserEntity()
+        savedUser.setId(1L)
         savedUser.setUsername(dto.getUsername())
         savedUser.setEmail(dto.getEmail())
         savedUser.setPassword("hashedPassword")
         savedUser.setRoles(Set.of(userRole))
 
         when:
-        UserEntity result = userEntityService.nuevoUsuario(dto)
+        def future = userEntityService.nuevoUsuario(dto)
+        UserEntity result = future.get()
 
         then:
         1 * passwordEncoder.encode(dto.getPassword()) >> "hashedPassword"
         1 * roleService.findOrCreateRole("ROLE_USER", _) >> new Role("ROLE_USER", "Usuario estándar")
-        1 * userEntityRepository.save(_) >> savedUser
+        1 * userEntityRepository.save(_) >> { UserEntity user ->
+            user.setId(1L)
+            return user
+        }
         result.getUsername() == dto.getUsername()
         result.getEmail() == dto.getEmail()
+        result.getId() == 1L
     }
 
-    def "nuevoUsuario throws exception when username already exists"() {
+    def "nuevoUsuario handles unexpected exceptions"() {
         given:
         CreateUserDto dto = new CreateUserDto()
-        dto.setUsername("existinguser")
-        dto.setEmail("existing@example.com")
+        dto.setUsername("newuser")
+        dto.setEmail("newuser@example.com")
         dto.setPassword("ValidPass123")
         dto.setPassword2("ValidPass123")
 
         when:
-        userEntityService.nuevoUsuario(dto)
+        def future = userEntityService.nuevoUsuario(dto)
+        future.get()
 
         then:
         1 * passwordEncoder.encode(_) >> "hashedPassword"
         1 * roleService.findOrCreateRole("ROLE_USER", _) >> new Role("ROLE_USER", "Usuario estándar")
-        1 * userEntityRepository.save(_) >> { throw new DataIntegrityViolationException("Duplicate key") }
-        thrown(ResponseStatusException)
+        1 * userEntityRepository.save(_) >> { throw new RuntimeException("Unexpected error") }
+        
+        def ex = thrown(ExecutionException)
+        ex.cause instanceof RuntimeException
+        ex.cause.message == "Unexpected error"
     }
 }
