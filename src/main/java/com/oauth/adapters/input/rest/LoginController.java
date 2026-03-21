@@ -15,7 +15,7 @@ public class LoginController {
 
     private final String contactEmail;
 
-    public LoginController(@Value("${app.contact.email}") String contactEmail) {
+    public LoginController(@Value("${app.contact.email:admin@localhost}") String contactEmail) {
         this.contactEmail = contactEmail;
     }
 
