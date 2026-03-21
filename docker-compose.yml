@@ -36,15 +36,17 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s        
+      start_period: 40s
     build: .
     image: felixmurcia/oauth2server:latest
     container_name: oauth2server
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
+    env_file:
+      - .env      
     environment:
       # Perfil activo - SIEMPRE dev en local
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: dev
 
       # ===========================================
       # OAuth2 Clients
@@ -101,17 +103,17 @@ services:
       # ===========================================
       # JWT
       # ===========================================
-      ISSUER_URL: http://localhost:8080
       JWT_AUDIENCE: ${JWT_AUDIENCE:-oauth2-client}
       JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-clave-secreta-para-desarrollo}
 
       SERVER_SSL_ENABLED: "false"
-      SSL_KEY_STORE: ""  # Vacío para ignorar
+      SSL_KEY_STORE: ""
       SSL_KEY_STORE_PASSWORD: ""
       SSL_KEY_ALIAS: ""
 
-    env_file:
-      - .env
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-admin@localhost}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:9000,http://localhost:5000}
+      ISSUER_URL: ${ISSUER_URL:-http://localhost:8080}
     volumes:
       - ./logs:/app/logs
     command: ["/app/run-dev.sh"]

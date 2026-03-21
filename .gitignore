@@ -85,8 +85,8 @@ src/main/resources/data.sql
 
 ### Directorios de build ###
 dist/
-out/
 bin/
 
 application-prod.properties
 backup-sensitive.sh
+docker-compose.prod.yml
