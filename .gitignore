@@ -90,3 +90,4 @@ bin/
 
 application-prod.properties
 backup-sensitive.sh
+docker-compose.prod.yml

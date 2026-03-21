@@ -9,15 +9,15 @@ class CreateUserDtoSpec extends Specification {
         CreateUserDto dto = new CreateUserDto()
         dto.setUsername("newuser")
         dto.setEmail("newuser@example.com")
-        dto.setPassword("Password123")
-        dto.setPassword2("Password123")
+        dto.setPassword("testPassword123")
+        dto.setPassword2("testPassword123")
         dto.setFullName("New User")
 
         expect:
         dto.getUsername() == "newuser"
         dto.getEmail() == "newuser@example.com"
-        dto.getPassword() == "Password123"
-        dto.getPassword2() == "Password123"
+        dto.getPassword() == "testPassword123"
+        dto.getPassword2() == "testPassword123"
         dto.getFullName() == "New User"
     }
 
@@ -37,13 +37,13 @@ class CreateUserDtoSpec extends Specification {
         when:
         CreateUserDto dto = new CreateUserDto(
             username: "testuser",
-            password: "pass123",
-            password2: "pass123"
+            password: "testPass123",
+            password2: "testPass123"
         )
 
         then:
         dto.getUsername() == "testuser"
-        dto.getPassword() == "pass123"
-        dto.getPassword2() == "pass123"
+        dto.getPassword() == "testPass123"
+        dto.getPassword2() == "testPass123"
     }
 }
