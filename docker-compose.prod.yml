@@ -4,17 +4,17 @@ services:
   # ===========================================
   postgres:
     image: postgres:15-alpine
-    container_name: oauth2-postgres-dev
+    container_name: oauth2-postgres-prod
     environment:
-      POSTGRES_DB: oauth2_dev
+      POSTGRES_DB: oauth2_prod
       POSTGRES_USER: oauth2_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oauth2_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oauth2_prod_password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U oauth2_user -d oauth2_dev"]
+      test: ["CMD-SHELL", "pg_isready -U oauth2_user -d oauth2_prod"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -36,7 +36,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 40s        
     build: .
     image: felixmurcia/oauth2server:latest
     container_name: oauth2server
@@ -45,8 +45,7 @@ services:
     env_file:
       - .env      
     environment:
-      # Perfil activo - SIEMPRE dev en local
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: prod
 
       # ===========================================
       # OAuth2 Clients
@@ -116,7 +115,7 @@ services:
       ISSUER_URL: ${ISSUER_URL:-http://localhost:8080}
     volumes:
       - ./logs:/app/logs
-    command: ["/app/run-dev.sh"]
+    command: ["/app/run-prod.sh"]
     restart: unless-stopped
     networks:
       - oauth-network
