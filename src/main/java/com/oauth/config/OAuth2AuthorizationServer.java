@@ -54,14 +54,21 @@ public class OAuth2AuthorizationServer {
         
         // Obtener los prefijos de clientes desde variable de entorno
         var clientsConfig = System.getenv("OAUTH2_CLIENTS");
+        log.info("=== CARGANDO CLIENTES OAUTH2 ===");
+        log.info("OAUTH2_CLIENTS env: {}", clientsConfig);
+        
         if (clientsConfig != null && !clientsConfig.isBlank()) {
             var prefixes = clientsConfig.split(",");
+            log.info("Prefijos encontrados: {}", String.join(", ", prefixes));
             for (var prefix : prefixes) {
                 var trimmedPrefix = prefix.trim();
                 if (!trimmedPrefix.isEmpty()) {
+                    log.info("Procesando prefijo: '{}' -> client_id generado: '{}'", trimmedPrefix, trimmedPrefix.toLowerCase().replace('_', '-'));
                     addClientIfConfigured(clients, passwordEncoder, trimmedPrefix);
                 }
             }
+        } else {
+            log.warn("OAUTH2_CLIENTS no está configurado o está vacío");
         }
         
         if (clients.isEmpty()) {
@@ -69,7 +76,10 @@ public class OAuth2AuthorizationServer {
             throw new IllegalStateException("No OAuth2 clients configured");
         }
         
-        log.debug("Registered {} OAuth2 clients", clients.size());
+        log.info("=== RESUMEN: {} clientes OAuth2 registrados ===", clients.size());
+        for (var client : clients) {
+            log.info("  - client_id: '{}'", client.getClientId());
+        }
         return new InMemoryRegisteredClientRepository(clients);
     }
 
@@ -78,11 +88,21 @@ public class OAuth2AuthorizationServer {
         var redirectUri = System.getenv(prefix + "_REDIRECT_URI");
         var clientId = prefix.toLowerCase().replace('_', '-');
         
+        log.info("  Variables para '{}': {}_SECRET={}, {}_REDIRECT_URI={}", 
+            clientId, prefix, secret != null ? "(configurada)" : "(NO CONFIGURADA)", 
+            prefix, redirectUri != null ? "(configurada)" : "(NO CONFIGURADA)");
+        
         if (secret != null && redirectUri != null && !secret.isBlank() && !redirectUri.isBlank()) {
             clients.add(createRegisteredClient(clientId, secret, redirectUri, passwordEncoder));
-            log.debug("Client '{}' configured", clientId);
+            log.info("  ✓ Cliente '{}' REGISTRADO correctamente", clientId);
         } else {
-            log.debug("Client '{}' not configured: missing environment variables", clientId);
+            log.warn("  ✗ Cliente '{}' NO REGISTRADO: faltan variables de entorno", clientId);
+            if (secret == null || secret.isBlank()) {
+                log.warn("    - Falta {}_SECRET", prefix);
+            }
+            if (redirectUri == null || redirectUri.isBlank()) {
+                log.warn("    - Falta {}_REDIRECT_URI", prefix);
+            }
         }
     }
 
