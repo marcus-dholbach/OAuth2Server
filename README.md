@@ -127,15 +127,15 @@ Para que la aplicación pueda usar OAuth2, necesitas registrarla mediante variab
 
 ```bash
 # Configurar cliente OAuth2
-OAUTH2_CLIENTS=CINE_PLATFORM,TRANSCRIBERAPP
+OAUTH2_CLIENTS=APP1,APP2
 
 # Cliente 1
-CINE_PLATFORM_SECRET=mi-secreto-seguro
-CINE_PLATFORM_REDIRECT_URI=http://localhost:3000/oauth/callback
+APP1_SECRET=mi-secreto-seguro
+APP1_REDIRECT_URI=http://localhost:3000/oauth/callback
 
 # Cliente 2
-TRANSCRIBERAPP_SECRET=otra-secreto
-TRANSCRIBERAPP_REDIRECT_URI=http://localhost:9000/oauth/callback
+APP2_SECRET=otra-secreto
+APP2_REDIRECT_URI=http://localhost:9000/oauth/callback
 ```
 
 ### Flujo Authorization Code
