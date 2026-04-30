@@ -39,7 +39,7 @@ services:
       start_period: 40s
     build: .
     image: felixmurcia/oauth2server:latest
-    container_name: oauth2server
+    container_name: oauth2server-dev
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     env_file:

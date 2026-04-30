@@ -7,7 +7,21 @@ RUN mvn clean package -DskipTests
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
+
+RUN apk add --no-cache bash
+
 WORKDIR /app
+
 COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080
+COPY scripts/run-prod.sh /app/run-prod.sh
+
+COPY src/main/resources/static /app/static/
+COPY src/main/resources/templates /app/templates/
+COPY src/main/resources/application-prod.properties /app/
+COPY src/main/resources/db/migration /app/db/migration/
+
+RUN chmod +x /app/run-prod.sh
+RUN mkdir -p /app/data /app/logs && chmod -R 777 /app/data /app/logs
+
+EXPOSE 8080 8443
 ENTRYPOINT ["java", "-jar", "app.jar"]
